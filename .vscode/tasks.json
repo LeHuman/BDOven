@@ -140,7 +140,9 @@
                 "${config:BAUDRATE}",
                 "-t${input:TEENSY_COM_TYPE}",
                 "--input",
-                "D"
+                "D",
+                "-w",
+                "-r"
             ],
             "options": {
                 "statusbar": {
