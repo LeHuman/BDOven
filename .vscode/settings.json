@@ -1,11 +1,17 @@
 {
-    "TEENSY_ECU": "MK66FX1M0",
+    "TEENSY_PORT": "COM3",
+    "BAUDRATE": "115200",
+    "CORE": "teensy4",
+    "CORE_MODEL": "40",
+    "CORE_NAME": "IMXRT1062",
+    "CORE_SPEED": "600000000",
+    "USB_SETTING": "USB_SERIAL",
     "TOOLCHAIN_OFFSET": "../TeensyToolchain",
-    "TEENSY_BAUDRATE": "115200",
-    "TEENSY_PORT": "COM9",
+    "CMAKE_FINAL_VARS": "-DENV_CORE_SPEED:STRING=${config:CORE_SPEED} -DENV_CORE_MODEL:STRING=${config:CORE_MODEL} -DENV_USB_SETTING:STRING=${config:USB_SETTING} ${config:ADDITIONAL_CMAKE_VARS}",
     // "ADDITIONAL_CMAKE_VARS": "-DCUSTOM_BUILD_PATH_PREFIX:STRING=build/Pre_Build/",
     "ADDITIONAL_CMAKE_VARS": "" ,
     "files.associations": {
+        "*.html": "html",
         "*.def": "cpp",
         "*.tcc": "cpp",
         "*.tpp": "cpp",
@@ -51,7 +57,11 @@
         "atomic": "cpp",
         "memory": "cpp",
         "optional": "cpp",
-        "set": "cpp"
+        "set": "cpp",
+        "usb_keyboard.h": "c",
+        "usb_dev.h": "c",
+        "usb_desc.h": "c",
+        "imxrt.h": "c"
     },
     "C_Cpp.clang_format_fallbackStyle": "{ BasedOnStyle: LLVM, UseTab: Never, IndentWidth: 4, TabWidth: 4, BreakBeforeBraces: Attach, AllowShortIfStatementsOnASingleLine: false, IndentCaseLabels: false, ColumnLimit: 0, AccessModifierOffset: -4 }",
     "search.exclude": {
