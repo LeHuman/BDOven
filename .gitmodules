@@ -1,0 +1,9 @@
+[submodule "libraries/ILI9341_T4"]
+	path = libraries/ILI9341_T4
+	url = https://github.com/vindar/ILI9341_T4
+[submodule "libraries/PXP"]
+	path = libraries/PXP
+	url = https://github.com/mjborgerson/PXP
+[submodule "libraries/T4_PXP"]
+	path = libraries/T4_PXP
+	url = https://github.com/vjmuzik/T4_PXP
