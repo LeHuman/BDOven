@@ -65,7 +65,8 @@
         "usb_dev.h": "c",
         "usb_desc.h": "c",
         "imxrt.h": "c",
-        "string_view": "cpp"
+        "string_view": "cpp",
+        "lv_hal_tick.h": "c"
     },
     "C_Cpp.clang_format_fallbackStyle": "{ BasedOnStyle: LLVM, UseTab: Never, IndentWidth: 4, TabWidth: 4, BreakBeforeBraces: Attach, AllowShortIfStatementsOnASingleLine: false, IndentCaseLabels: false, ColumnLimit: 0, AccessModifierOffset: -4 }",
     "search.exclude": {

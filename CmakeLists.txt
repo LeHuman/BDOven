@@ -127,10 +127,12 @@ add_library(libraries STATIC ${L_ASM_BUILD_FILES} ${L_C_BUILD_FILES} ${L_CXX_BUI
 target_include_directories(libraries PUBLIC ${LIBRARY_PATH} ${LIBRARY_INCLUDE})
 target_link_libraries(libraries core)
 
+add_subdirectory(lvgl)
+target_link_libraries(lvgl libraries)
+
 # Executable
 
 add_executable(${TEENSY_BIN} ${S_ASM_BUILD_FILES} ${S_C_BUILD_FILES} ${S_CXX_BUILD_FILES})
-add_subdirectory(lvgl)
 target_link_libraries(${TEENSY_BIN} libraries core lvgl::lvgl)
 
 set_target_properties(${TEENSY_BIN} PROPERTIES LINK_DEPENDS ${TEENSY_CORE_LD_SCRIPT})
