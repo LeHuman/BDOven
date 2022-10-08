@@ -1,0 +1,32 @@
+{
+    "configurations": [
+        {
+            "name": "Windows",
+            "includePath": [
+                "${workspaceFolder}/${config:TOOLCHAIN_OFFSET}/teensy/avr/cores/teensy3/**",
+                "${workspaceFolder}/libraries/**"
+            ],
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/${config:TOOLCHAIN_OFFSET}/teensy/avr/cores/teensy3/",
+                    "${workspaceFolder}/libraries/"
+                ],
+                "limitSymbolsToIncludedHeaders": false
+            },
+            "defines": [
+                "__${config:TEENSY_ECU}__",
+                "F_CPU=180000000",
+                "USB_SERIAL",
+                "LAYOUT_US_ENGLISH",
+                "TEENSYDUINO=144",
+                "_GNU_SOURCE",
+                "USING_MAKEFILE"
+            ],
+            "compilerPath": "${workspaceFolder}/${config:TOOLCHAIN_OFFSET}/bin/arm-none-eabi-gcc.exe",
+            "cStandard": "gnu11",
+            "cppStandard": "gnu++14",
+            "intelliSenseMode": "gcc-arm"
+        }
+    ],
+    "version": 4
+}

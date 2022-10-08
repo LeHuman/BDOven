@@ -1,0 +1,270 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build",
+            "type": "process",
+            "detail": "Compile project",
+            "presentation": {
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": true
+            },
+            "command": "cmd.exe",
+            "args": [
+                "/d",
+                "/c",
+                {
+                    "quoting": "weak",
+                    "value": "${workspaceFolder}/${config:TOOLCHAIN_OFFSET}/tools/config.py"
+                },
+                "build",
+                "${config:ADDITIONAL_CMAKE_VARS}"
+            ],
+            "options": {
+                "statusbar": {
+                    "label": "$(file-binary)",
+                    "color": "#1ba82e"
+                }
+            },
+            "problemMatcher": {
+                "base": "$gcc",
+                "pattern": {
+                    "regexp": "^(.*?):(\\d+):(\\d*):?\\s+(?:fatal\\s+)?(warning|error):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                }
+            }
+        },
+        {
+            "label": "Configure",
+            "type": "process",
+            "detail": "Configure the CMake project",
+            "presentation": {
+                "panel": "shared",
+                "showReuseMessage": false
+            },
+            "command": "cmd.exe",
+            "args": [
+                "/d",
+                "/c",
+                {
+                    "quoting": "weak",
+                    "value": "${workspaceFolder}/${config:TOOLCHAIN_OFFSET}/tools/config.py"
+                },
+                "config",
+                "${config:ADDITIONAL_CMAKE_VARS}"
+            ],
+            "options": {
+                "statusbar": {
+                    "hide": true
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Reset",
+            "type": "process",
+            "detail": "Clean up entire CMake project",
+            "presentation": {
+                "panel": "shared",
+                "showReuseMessage": false
+            },
+            "command": "cmd.exe",
+            "args": [
+                "/d",
+                "/c",
+                {
+                    "quoting": "weak",
+                    "value": "${workspaceFolder}/${config:TOOLCHAIN_OFFSET}/tools/config.py"
+                },
+                "reset",
+                "${config:ADDITIONAL_CMAKE_VARS}"
+            ],
+            "options": {
+                "statusbar": {
+                    "hide": true
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Upload",
+            "type": "process",
+            "detail": "Upload compiled binary to teensy",
+            "presentation": {
+                "panel": "shared",
+                "showReuseMessage": false
+            },
+            "command": "cmd.exe",
+            "args": [
+                "/d",
+                "/c",
+                {
+                    "quoting": "weak",
+                    "value": "${workspaceFolder}/${config:TOOLCHAIN_OFFSET}/tools/config.py"
+                },
+                "upload",
+                "${config:TEENSY_PORT}"
+            ],
+            "options": {
+                "statusbar": {
+                    "label": "$(circuit-board)",
+                    "color": "#e6d925"
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Monitor",
+            "type": "shell",
+            "detail": "Monitor teensy over a CLI",
+            "presentation": {
+                "panel": "shared",
+                "showReuseMessage": false
+            },
+            "command": "cmd.exe",
+            "args": [
+                "/d",
+                "/c",
+                "${workspaceFolder}\\${config:TOOLCHAIN_OFFSET}\\tools\\ComMonitor.exe",
+                "${config:TEENSY_PORT}",
+                "${config:TEENSY_BAUDRATE}",
+                "-t${input:TEENSY_COM_TYPE}",
+                // "-m8",
+                // "--jsonPath",
+                // "${workspaceFolder}\\log_lookup.json",
+                "-r",
+                "-w",
+            ],
+            "options": {
+                "statusbar": {
+                    "label": "$(terminal)",
+                    "color": "#000000"
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Monitor Raw",
+            "type": "shell",
+            "detail": "Monitor teensy hex values over a CLI",
+            "presentation": {
+                "panel": "shared",
+                "showReuseMessage": false
+            },
+            "command": "cmd.exe",
+            "args": [
+                "/d",
+                "/c",
+                "${workspaceFolder}\\${config:TOOLCHAIN_OFFSET}\\tools\\ComMonitor.exe",
+                "${config:TEENSY_PORT}",
+                "${config:TEENSY_BAUDRATE}",
+                "-tH",
+                "-m8",
+                "-r",
+                "-w",
+            ],
+            "options": {
+                "statusbar": {
+                    "hide": true
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Disable Teensy",
+            "type": "process",
+            "detail": "Put teensy in programming mode",
+            "presentation": {
+                "panel": "shared",
+                "showReuseMessage": false,
+                "reveal": "silent"
+            },
+            "command": "cmd.exe",
+            "args": [
+                "/d",
+                "/c",
+                {
+                    "quoting": "weak",
+                    "value": "${workspaceFolder}/${config:TOOLCHAIN_OFFSET}/tools/config.py"
+                },
+                "disable",
+                "${config:TEENSY_PORT}"
+            ],
+            "options": {
+                "statusbar": {
+                    "hide": true
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Shebang",
+            "detail": "Run all tasks required to program teensy",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Build",
+                "Upload",
+                "Monitor"
+            ],
+            "options": {
+                "statusbar": {
+                    "label": "$(rocket)",
+                    "color": "#e67c25"
+                }
+            },
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Clean",
+            "type": "process",
+            "detail": "Clean up build files",
+            "presentation": {
+                "panel": "shared",
+                "showReuseMessage": false
+            },
+            "command": "cmd.exe",
+            "args": [
+                "/d",
+                "/c",
+                {
+                    "quoting": "weak",
+                    "value": "${workspaceFolder}/${config:TOOLCHAIN_OFFSET}/tools/config.py"
+                },
+                "clean"
+            ],
+            "options": {
+                "statusbar": {
+                    "label": "$(refresh)",
+                    "color": "#e62525"
+                }
+            },
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "TEENSY_COM_TYPE",
+            "description": "What type of data the monitor should expect",
+            "type": "pickString",
+            "options": [
+                "Ascii",
+                "Hex",
+                "Decimal",
+                "Binary",
+            ],
+            "default": "Ascii"
+        }
+    ]
+}
