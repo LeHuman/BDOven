@@ -7,3 +7,6 @@
 [submodule "libraries/T4_PXP"]
 	path = libraries/T4_PXP
 	url = https://github.com/vjmuzik/T4_PXP
+[submodule "lvgl"]
+	path = lvgl
+	url = https://github.com/lvgl/lvgl
