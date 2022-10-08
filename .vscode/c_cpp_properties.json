@@ -3,12 +3,14 @@
         {
             "name": "Windows",
             "includePath": [
-                "${workspaceFolder}/${config:TOOLCHAIN_OFFSET}/teensy/avr/cores/teensy3/**",
+                "${workspaceFolder}/${config:TOOLCHAIN_OFFSET}/teensy/avr/cores/${config:CORE}/**",
+                "${workspaceFolder}/${config:TOOLCHAIN_OFFSET}/teensy/avr/libraries/**",
                 "${workspaceFolder}/libraries/**"
             ],
             "browse": {
                 "path": [
-                    "${workspaceFolder}/${config:TOOLCHAIN_OFFSET}/teensy/avr/cores/teensy3/",
+                    "${workspaceFolder}/${config:TOOLCHAIN_OFFSET}/teensy/avr/cores/${config:CORE}/",
+                    "${workspaceFolder}/${config:TOOLCHAIN_OFFSET}/teensy/avr/libraries/**",
                     "${workspaceFolder}/libraries/"
                 ],
                 "limitSymbolsToIncludedHeaders": false
