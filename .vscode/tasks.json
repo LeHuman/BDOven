@@ -126,7 +126,7 @@
         {
             "label": "Monitor",
             "type": "shell",
-            "detail": "Monitor teensy over a CLI",
+            "detail": "Monitor ecu over a CLI",
             "presentation": {
                 "panel": "shared",
                 "showReuseMessage": false
@@ -137,13 +137,10 @@
                 "/c",
                 "${workspaceFolder}\\${config:TOOLCHAIN_OFFSET}\\tools\\ComMonitor.exe",
                 "${config:TEENSY_PORT}",
-                "${config:TEENSY_BAUDRATE}",
+                "${config:BAUDRATE}",
                 "-t${input:TEENSY_COM_TYPE}",
-                // "-m8",
-                // "--jsonPath",
-                // "${workspaceFolder}\\log_lookup.json",
-                "-r",
-                "-w",
+                "--input",
+                "D"
             ],
             "options": {
                 "statusbar": {
@@ -166,8 +163,8 @@
                 "/d",
                 "/c",
                 "${workspaceFolder}\\${config:TOOLCHAIN_OFFSET}\\tools\\ComMonitor.exe",
-                "${config:TEENSY_PORT}",
-                "${config:TEENSY_BAUDRATE}",
+                "${input:TEENSY_USB_PORTNAME}",
+                "${config:BAUDRATE}",
                 "-tH",
                 "-m8",
                 "-r",

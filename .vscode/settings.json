@@ -3,6 +3,8 @@
     "BAUDRATE": "115200",
     "CORE": "teensy4",
     "CORE_MODEL": "40",
+    "GRAPH_ARG": "",
+    "LOGGING_OPTION": "-l${workspaceFolder}\\logs",
     "CORE_NAME": "IMXRT1062",
     "CORE_SPEED": "600000000",
     "USB_SETTING": "USB_SERIAL",
