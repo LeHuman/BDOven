@@ -22,7 +22,7 @@
                     "value": "${workspaceFolder}/${config:TOOLCHAIN_OFFSET}/tools/config.py"
                 },
                 "build",
-                "${config:ADDITIONAL_CMAKE_VARS}"
+                "${config:CMAKE_FINAL_VARS}"
             ],
             "options": {
                 "statusbar": {
@@ -59,7 +59,7 @@
                     "value": "${workspaceFolder}/${config:TOOLCHAIN_OFFSET}/tools/config.py"
                 },
                 "config",
-                "${config:ADDITIONAL_CMAKE_VARS}"
+                "${config:CMAKE_FINAL_VARS}"
             ],
             "options": {
                 "statusbar": {
@@ -85,7 +85,7 @@
                     "value": "${workspaceFolder}/${config:TOOLCHAIN_OFFSET}/tools/config.py"
                 },
                 "reset",
-                "${config:ADDITIONAL_CMAKE_VARS}"
+                "${config:CMAKE_FINAL_VARS}"
             ],
             "options": {
                 "statusbar": {
