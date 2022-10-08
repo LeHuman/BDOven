@@ -100,23 +100,25 @@
             "detail": "Upload compiled binary to teensy",
             "presentation": {
                 "panel": "shared",
-                "showReuseMessage": false
+                "showReuseMessage": false,
+                "reveal": "silent"
             },
             "command": "cmd.exe",
             "args": [
                 "/d",
                 "/c",
+                "python",
                 {
                     "quoting": "weak",
                     "value": "${workspaceFolder}/${config:TOOLCHAIN_OFFSET}/tools/config.py"
                 },
                 "upload",
-                "${config:TEENSY_PORT}"
+                "${config:TEENSY_PORT}",
+                "${workspaceFolder}/build/bin/Teensy${config:CORE_MODEL}.hex"
             ],
             "options": {
                 "statusbar": {
-                    "label": "$(circuit-board)",
-                    "color": "#e6d925"
+                    "hide": true
                 }
             },
             "problemMatcher": []
