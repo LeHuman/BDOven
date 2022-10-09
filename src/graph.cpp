@@ -78,7 +78,7 @@ void Graph::setMainData(const lv_coord_t *Xs, const lv_coord_t *Ys, const size_t
     }
 }
 
-void Graph::setMainData(const std::vector<double> Xs, const std::vector<double> Ys, double resolution) {
+void Graph::setMainData(const std::vector<double> &Xs, const std::vector<double> &Ys, double resolution) {
     lv_chart_remove_series(chart, main_series);
     main_series = lv_chart_add_series(chart, lv_palette_main(LV_PALETTE_GREY), LV_CHART_AXIS_PRIMARY_Y);
     lv_chart_set_point_count(chart, ceil(Xs.back() / resolution));
