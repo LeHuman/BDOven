@@ -10,3 +10,6 @@
 [submodule "lvgl"]
 	path = lvgl
 	url = https://github.com/lvgl/lvgl
+[submodule "libraries/spline"]
+	path = libraries/spline
+	url = https://github.com/ttk592/spline
