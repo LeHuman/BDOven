@@ -61,17 +61,15 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_compile_definitions(_GNU_SOURCE __arm__ USING_MAKEFILE LAYOUT_US_ENGLISH F_CPU=${TEENSY_CORE_SPEED} __${TEENSY_CORE_NAME}__)
 add_compile_definitions(ARDUINO=${ARDUINO_VER} TEENSYDUINO=${TEENSYDUINO_VER} ${TEENSY_ARDUINO} ${TEENSY_CORE} ${USB_SETTING} )
-add_compile_options(-Wall -O3 -mthumb -MMD -I. -ffunction-sections -fdata-sections -mcpu=${TEENSY_CPU} -mfloat-abi=hard -mfpu=${FLOAT_HARDWARE}) # -E
-string(APPEND CMAKE_CXX_FLAGS "-felide-constructors -fno-exceptions -fpermissive -fno-rtti -Wno-error=narrowing")
+add_compile_options(-c -O3 -g -Wall -ffunction-sections -fdata-sections -nostdlib -MMD -mthumb -mcpu=${TEENSY_CPU} -mfloat-abi=hard -mfpu=${FLOAT_HARDWARE}) # -E
+string(APPEND CMAKE_CXX_FLAGS "-fno-exceptions -fpermissive -fno-rtti -felide-constructors -Wno-error=narrowing")
 string(APPEND CMAKE_ASM_FLAGS "-x assembler-with-cpp")
 
 set(CORE_PATH "${TOOLCHAIN_ROOT_PATH}/teensy/avr/cores/${TEENSY_CORE}")
 set(CORE_LIB_PATH "${TOOLCHAIN_ROOT_PATH}/teensy/avr/libraries")
 string(TOLOWER ${TEENSY_CORE_NAME} TEENSY_CORE_NAME_LOWER)
 set(TEENSY_CORE_LD_SCRIPT "${CORE_PATH}/${TEENSY_CORE_NAME_LOWER}${LINKER_EXTENSION}.ld" CACHE INTERNAL "")
-
-add_link_options(-O3 -Wl,--gc-sections,--relax,-defsym=__rtc_localtime=0 -lm -lstdc++ -l${LINKER_MATH} -T${TEENSY_CORE_LD_SCRIPT})
-add_link_options(-mcpu=${TEENSY_CPU} -mfloat-abi=hard -mfpu=${FLOAT_HARDWARE} -mthumb)
+add_link_options(-O3 -Wl,--gc-sections,--relax,-defsym=__rtc_localtime=0 -T${TEENSY_CORE_LD_SCRIPT} -mthumb -mcpu=${TEENSY_CPU} -mfloat-abi=hard -mfpu=${FLOAT_HARDWARE} -lm -lc -l${LINKER_MATH} -lstdc++)
 
 if(EXISTS "../script.disable")
     message(STATUS "Mapped logging disabled")
@@ -113,17 +111,18 @@ add_library(core STATIC ${C_ASM_BUILD_FILES} ${C_C_BUILD_FILES} ${C_CXX_BUILD_FI
 target_include_directories(core PUBLIC ${CORE_PATH} ${CORE_INCLUDE})
 
 
-add_library(libraries STATIC ${L_ASM_BUILD_FILES} ${L_C_BUILD_FILES} ${L_CXX_BUILD_FILES})
-target_include_directories(libraries PUBLIC ${LIBRARY_PATH} ${LIBRARY_INCLUDE})
-target_link_libraries(libraries core)
+# add_library(libraries STATIC ${L_ASM_BUILD_FILES} ${L_C_BUILD_FILES} ${L_CXX_BUILD_FILES})
+# target_include_directories(libraries PUBLIC ${LIBRARY_PATH} ${LIBRARY_INCLUDE})
+# target_link_libraries(libraries core)
 
-add_subdirectory(lvgl)
-target_link_libraries(lvgl libraries)
+# add_subdirectory(lvgl)
+# target_link_libraries(lvgl libraries)
 
 # Executable
 
 add_executable(${TEENSY_BIN} ${S_ASM_BUILD_FILES} ${S_C_BUILD_FILES} ${S_CXX_BUILD_FILES})
-target_link_libraries(${TEENSY_BIN} libraries core lvgl::lvgl)
+target_link_libraries(${TEENSY_BIN} core)
+# target_link_libraries(${TEENSY_BIN} libraries core lvgl::lvgl)
 
 set_target_properties(${TEENSY_BIN} PROPERTIES LINK_DEPENDS ${TEENSY_CORE_LD_SCRIPT})
 set_target_properties(${TEENSY_BIN} PROPERTIES OUTPUT_NAME ${TEENSY_BIN} SUFFIX ".elf")
