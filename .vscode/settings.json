@@ -67,7 +67,13 @@
         "string_view": "cpp",
         "lv_hal_tick.h": "c",
         "bit": "cpp",
-        "memory_resource": "cpp"
+        "memory_resource": "cpp",
+        "compare": "cpp",
+        "complex": "cpp",
+        "concepts": "cpp",
+        "cstddef": "cpp",
+        "iterator": "cpp",
+        "numbers": "cpp"
     },
     "C_Cpp.clang_format_fallbackStyle": "{ BasedOnStyle: LLVM, UseTab: Never, IndentWidth: 4, TabWidth: 4, BreakBeforeBraces: Attach, AllowShortIfStatementsOnASingleLine: false, IndentCaseLabels: false, ColumnLimit: 0, AccessModifierOffset: -4 }",
     "search.exclude": {

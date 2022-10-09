@@ -1,5 +1,6 @@
 #include "Arduino.h"
 #include "lv_conf.h"
+#include "spline.h"
 #include <ILI9341_T4.h>
 #include <lvgl.h>
 #include <vector>
@@ -122,7 +123,20 @@ int main(void) {
 
     g.setMainData(Xs, Ys);
 
+    tk::spline spliner(Xs, Ys, tk::spline::cspline);
+    double time = 0;
+    long rnd = 0;
+
+    elapsedMillis ems;
+
     while (true) {
+        if (ems > 5) {
+            g.updateData(time, max(spliner(time) + (rnd += random(-8, 9)), 0));
+            time += 0.125;
+            ems = 0;
+            if (time > Xs.back())
+                time = random(283);
+        }
         lv_task_handler();
     }
 

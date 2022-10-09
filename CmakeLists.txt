@@ -53,6 +53,11 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 set(LIBRARY_PATH ${CUSTOM_BUILD_PATH_PREFIX}libraries CACHE INTERNAL "")
 set(SOURCE_PATH ${CUSTOM_BUILD_PATH_PREFIX}src CACHE INTERNAL "")
 
+set(CORE_PATH "${TOOLCHAIN_ROOT_PATH}/teensy/avr/cores/${TEENSY_CORE}")
+set(CORE_LIB_PATH "${TOOLCHAIN_ROOT_PATH}/teensy/avr/libraries")
+string(TOLOWER ${TEENSY_CORE_NAME} TEENSY_CORE_NAME_LOWER)
+set(TEENSY_CORE_LD_SCRIPT "${CORE_PATH}/${TEENSY_CORE_NAME_LOWER}${LINKER_EXTENSION}.ld" CACHE INTERNAL "")
+
 # Compile flags and definitions
 
 set(CMAKE_C_STANDARD 17)
@@ -61,15 +66,10 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_compile_definitions(_GNU_SOURCE __arm__ USING_MAKEFILE LAYOUT_US_ENGLISH F_CPU=${TEENSY_CORE_SPEED} __${TEENSY_CORE_NAME}__)
 add_compile_definitions(ARDUINO=${ARDUINO_VER} TEENSYDUINO=${TEENSYDUINO_VER} ${TEENSY_ARDUINO} ${TEENSY_CORE} ${USB_SETTING} )
-add_compile_options(-c -O3 -g -Wall -ffunction-sections -fdata-sections -nostdlib -MMD -mthumb -mcpu=${TEENSY_CPU} -mfloat-abi=hard -mfpu=${FLOAT_HARDWARE}) # -E
+add_compile_options(-c -O3 -g -Wall -ffunction-sections -fdata-sections -nostdlib -MMD -mthumb -mcpu=${TEENSY_CPU} -mfloat-abi=hard -mfpu=${FLOAT_HARDWARE})
 string(APPEND CMAKE_CXX_FLAGS "-fno-exceptions -fpermissive -fno-rtti -felide-constructors -Wno-error=narrowing")
 string(APPEND CMAKE_ASM_FLAGS "-x assembler-with-cpp")
-
-set(CORE_PATH "${TOOLCHAIN_ROOT_PATH}/teensy/avr/cores/${TEENSY_CORE}")
-set(CORE_LIB_PATH "${TOOLCHAIN_ROOT_PATH}/teensy/avr/libraries")
-string(TOLOWER ${TEENSY_CORE_NAME} TEENSY_CORE_NAME_LOWER)
-set(TEENSY_CORE_LD_SCRIPT "${CORE_PATH}/${TEENSY_CORE_NAME_LOWER}${LINKER_EXTENSION}.ld" CACHE INTERNAL "")
-add_link_options(-O3 -Wl,--gc-sections,--relax,-defsym=__rtc_localtime=0 -T${TEENSY_CORE_LD_SCRIPT} -mthumb -mcpu=${TEENSY_CPU} -mfloat-abi=hard -mfpu=${FLOAT_HARDWARE} -lm -lc -l${LINKER_MATH} -lstdc++)
+add_link_options(-O3 -Wl,--gc-sections,--relax,-defsym=__rtc_localtime=0 -T${TEENSY_CORE_LD_SCRIPT} -mthumb -mcpu=${TEENSY_CPU} -mfloat-abi=hard -mfpu=${FLOAT_HARDWARE} --specs=nano.specs -lm -lc -l${LINKER_MATH} -lstdc++)
 
 if(EXISTS "../script.disable")
     message(STATUS "Mapped logging disabled")

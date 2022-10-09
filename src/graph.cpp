@@ -1,4 +1,5 @@
 #include "graph.h"
+#include "clamp.h"
 #include "spline.h"
 
 namespace Graph {
@@ -78,16 +79,71 @@ void Graph::setMainData(const lv_coord_t *Xs, const lv_coord_t *Ys, const size_t
     }
 }
 
+void Graph::updateData(lv_coord_t x, lv_coord_t y) {
+    auto Xs = lv_chart_get_x_array(chart, main_series);
+    int i = 0;
+    for (; i < pnt_cnt; ++i) {
+        if (*(Xs + i) >= x)
+            break;
+    }
+    if (y > y_max) {
+        y_max += g_margin;
+        updateRange();
+    }
+    // lv_point_t *m_pnt;
+    // lv_chart_get_point_pos_by_id(chart, main_series, i, m_pnt);
+    lv_chart_set_value_by_id(chart, alt_series, i, y);
+    // if (y >= m_pnt->y) {
+    //     main_cur->color = lv_palette_main(LV_PALETTE_BLUE);
+    //     alt_cur->color = lv_palette_main(LV_PALETTE_PINK);
+    // } else {
+    //     main_cur->color = lv_palette_main(LV_PALETTE_PINK);
+    //     alt_cur->color = lv_palette_main(LV_PALETTE_BLUE);
+    // }
+    lv_chart_set_cursor_point(chart, main_cur, main_series, i);
+    lv_chart_set_cursor_point(chart, alt_cur, alt_series, i);
+}
+
+void Graph::updateRange() {
+    lv_chart_set_range(chart, LV_CHART_AXIS_PRIMARY_X, 0, x_max + g_margin);
+    lv_chart_set_range(chart, LV_CHART_AXIS_SECONDARY_X, 0, x_max + g_margin);
+    lv_chart_set_range(chart, LV_CHART_AXIS_PRIMARY_Y, 0, y_max + g_margin);
+    lv_chart_set_range(chart, LV_CHART_AXIS_SECONDARY_Y, 0, y_max + g_margin);
+}
+
 void Graph::setMainData(const std::vector<double> &Xs, const std::vector<double> &Ys, double resolution) {
-    lv_chart_remove_series(chart, main_series);
-    main_series = lv_chart_add_series(chart, lv_palette_main(LV_PALETTE_GREY), LV_CHART_AXIS_PRIMARY_Y);
-    lv_chart_set_point_count(chart, ceil(Xs.back() / resolution));
+    if (main_series != nullptr) {
+        lv_chart_remove_series(chart, main_series);
+        lv_chart_remove_series(chart, alt_series);
+    }
+    main_series = lv_chart_add_series(chart, lv_palette_main(LV_PALETTE_INDIGO), LV_CHART_AXIS_PRIMARY_Y);
+    alt_series = lv_chart_add_series(chart, lv_palette_main(LV_PALETTE_RED), LV_CHART_AXIS_SECONDARY_Y);
+    pnt_cnt = ceil(Xs.back() / resolution) + 1;
+    lv_chart_set_point_count(chart, pnt_cnt);
 
     tk::spline spln(Xs, Ys, tk::spline::cspline_hermite);
 
-    for (double i = 0.0; i < Xs.back(); i += resolution) {
-        lv_chart_set_next_value2(chart, main_series, Xs[i], Ys[i]);
+    for (int i = 0; i < pnt_cnt; i++) {
+        lv_chart_set_next_value2(chart, main_series, resolution * i, spln(resolution * i));
+        lv_chart_set_next_value2(chart, alt_series, resolution * i, spln(resolution * i));
     }
+
+    for (auto it1 = Xs.begin(), it2 = Ys.begin(); it1 != Xs.end(); ++it1, ++it2) {
+        // auto pnt = lv_chart_add_cursor(chart, lv_palette_main(LV_PALETTE_LIGHT_BLUE), LV_DIR_LEFT | LV_DIR_BOTTOM);
+        // points.push_back(pnt);
+        x_max = max(*it1, x_max);
+        y_max = max(*it2, y_max);
+        // lv_chart_set_cursor_point(chart, pnt, main_series, *it1);
+    }
+
+    lv_chart_refresh(chart);
+    updateRange();
+}
+
+void Graph::zoom(uint16_t zoom) {
+    zoom = cmap(zoom, 0, 100, 0, 1024);
+    lv_chart_set_zoom_x(chart, zoom);
+    lv_chart_set_zoom_y(chart, zoom);
 }
 
 void Graph::init(void) {
@@ -96,16 +152,14 @@ void Graph::init(void) {
     lv_obj_align(chart, LV_ALIGN_CENTER, 0, -10);
 
     // lv_obj_add_event_cb(chart, event_cb, LV_EVENT_ALL, NULL);
-    main_series = lv_chart_add_series(chart, lv_palette_main(LV_PALETTE_GREY), LV_CHART_AXIS_PRIMARY_Y);
-    alt_series = lv_chart_add_series(chart, lv_palette_main(LV_PALETTE_CYAN), LV_CHART_AXIS_PRIMARY_Y);
     lv_obj_set_style_size(chart, 0, 0, LV_PART_INDICATOR);
 
     lv_chart_set_axis_tick(chart, LV_CHART_AXIS_PRIMARY_Y, 10, 5, 6, 5, true, 40);
-    lv_chart_set_axis_tick(chart, LV_CHART_AXIS_PRIMARY_X, 10, 5, 10, 1, true, 30);
-    lv_chart_set_range(chart, LV_CHART_AXIS_PRIMARY_X, 0, 300);
-    lv_chart_set_range(chart, LV_CHART_AXIS_PRIMARY_Y, 0, 300);
+    lv_chart_set_axis_tick(chart, LV_CHART_AXIS_PRIMARY_X, 10, 5, 8, 4, true, 30);
+    lv_chart_set_update_mode(chart, LV_CHART_UPDATE_MODE_SHIFT);
 
-    cursor = lv_chart_add_cursor(chart, lv_palette_main(LV_PALETTE_BLUE_GREY), LV_DIR_LEFT | LV_DIR_BOTTOM);
+    main_cur = lv_chart_add_cursor(chart, lv_palette_main(LV_PALETTE_BLUE), LV_DIR_BOTTOM);
+    alt_cur = lv_chart_add_cursor(chart, lv_palette_main(LV_PALETTE_PINK), LV_DIR_TOP);
 }
 
 } // namespace Graph
