@@ -70,7 +70,7 @@ set(CORE_LIB_PATH "${TOOLCHAIN_ROOT_PATH}/teensy/avr/libraries")
 string(TOLOWER ${TEENSY_CORE_NAME} TEENSY_CORE_NAME_LOWER)
 set(TEENSY_CORE_LD_SCRIPT "${CORE_PATH}/${TEENSY_CORE_NAME_LOWER}${LINKER_EXTENSION}.ld" CACHE INTERNAL "")
 
-add_link_options(-Wl,--gc-sections,--relax,-defsym=__rtc_localtime=0 --specs=nano.specs -lm -lstdc++ -l${LINKER_MATH} -T${TEENSY_CORE_LD_SCRIPT})
+add_link_options(-O3 -Wl,--gc-sections,--relax,-defsym=__rtc_localtime=0 -lm -lstdc++ -l${LINKER_MATH} -T${TEENSY_CORE_LD_SCRIPT})
 add_link_options(-mcpu=${TEENSY_CPU} -mfloat-abi=hard -mfpu=${FLOAT_HARDWARE} -mthumb)
 
 if(EXISTS "../script.disable")
