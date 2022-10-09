@@ -28,8 +28,8 @@
                 "USING_MAKEFILE"
             ],
             "compilerPath": "${workspaceFolder}/${config:TOOLCHAIN_OFFSET}/bin/arm-none-eabi-gcc.exe",
-            "cStandard": "c17",
-            "cppStandard": "c++20",
+            "cStandard": "gnu17",
+            "cppStandard": "gnu++20",
             "intelliSenseMode": "gcc-arm"
         }
     ],
