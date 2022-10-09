@@ -2,6 +2,10 @@
 #include "lv_conf.h"
 #include <ILI9341_T4.h>
 #include <lvgl.h>
+#include <vector>
+
+#include "graph.h"
+#include "reflow.h"
 
 #define PIN_SCK 13        // mandatory
 #define PIN_MISO 12       // mandatory
@@ -50,21 +54,6 @@ void my_touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data) {
     }
 }
 
-// event callback
-void ta_event_cb(lv_event_t *e) {
-    lv_event_code_t code = lv_event_get_code(e);
-    lv_obj_t *ta = (lv_obj_t *)lv_event_get_target(e);
-    lv_obj_t *kb = (lv_obj_t *)lv_event_get_user_data(e);
-    if (code == LV_EVENT_FOCUSED) {
-        lv_keyboard_set_textarea(kb, ta);
-        lv_obj_clear_flag(kb, LV_OBJ_FLAG_HIDDEN);
-    }
-    if (code == LV_EVENT_DEFOCUSED) {
-        lv_keyboard_set_textarea(kb, NULL);
-        lv_obj_add_flag(kb, LV_OBJ_FLAG_HIDDEN);
-    }
-}
-
 int main(void) {
     Serial.begin(115200);
     tft.begin(SPI_SPEED, 6000000);
@@ -95,18 +84,45 @@ int main(void) {
     indev_drv.read_cb = my_touchpad_read;
     lv_indev_drv_register(&indev_drv);
 
-    lv_obj_t *kb = lv_keyboard_create(lv_scr_act());
-    lv_obj_t *ta = lv_textarea_create(lv_scr_act());
-    lv_obj_align(ta, LV_ALIGN_TOP_LEFT, 10, 10);
-    lv_obj_add_event_cb(ta, ta_event_cb, LV_EVENT_ALL, kb);
-    lv_textarea_set_placeholder_text(ta, "Hello");
-    lv_obj_set_size(ta, 220, 100);
+    Graph::Graph g = Graph::Graph();
 
-    // pinMode(15, OUTPUT);
+    g.setSize(230, 150);
+    g.setPos(0, 0);
+    g.setTitle("Amogus");
+
+    // lv_coord_t Xs[Reflow::REFLOW_PROFILE_CHIPQUIK_SNAGCU.len];
+    // lv_coord_t Ys[Reflow::REFLOW_PROFILE_CHIPQUIK_SNAGCU.len];
+
+    // for (int i = 0; i < Reflow::REFLOW_PROFILE_CHIPQUIK_SNAGCU.len; i++) {
+    //     Xs[i] = Reflow::REFLOW_PROFILE_CHIPQUIK_SNAGCU.timing[i][1];
+    //     Ys[i] = Reflow::REFLOW_PROFILE_CHIPQUIK_SNAGCU.timing[i][2];
+    // }
+
+    // g.setMainData(Xs, Ys, Reflow::REFLOW_PROFILE_CHIPQUIK_SNAGCU.len);
+
+    std::vector<double> Xs = {
+        0,
+        90,
+        180,
+        210,
+        240,
+        270,
+        281,
+    };
+
+    std::vector<double> Ys = {
+        25,
+        150,
+        175,
+        217,
+        249,
+        217,
+        175,
+    };
+
+    g.setMainData(Xs, Ys);
+
     while (true) {
-        // static bool on = false;
-        // digitalWriteFast(15, (on = !on));
-        // delay(100);
         lv_task_handler();
     }
 

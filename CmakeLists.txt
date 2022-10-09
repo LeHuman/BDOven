@@ -58,14 +58,14 @@ set(SOURCE_PATH ${CUSTOM_BUILD_PATH_PREFIX}src CACHE INTERNAL "")
 add_compile_definitions(_GNU_SOURCE USING_MAKEFILE LAYOUT_US_ENGLISH F_CPU=${TEENSY_CORE_SPEED} __${TEENSY_CORE_NAME}__)
 add_compile_definitions(ARDUINO=${ARDUINO_VER} TEENSYDUINO=${TEENSYDUINO_VER} ${TEENSY_ARDUINO} ${TEENSY_CORE} ${USB_SETTING} )
 add_compile_options(-O3 -CC -Wall -Wno-error=narrowing -MMD -nostdlib) # -E
-add_compile_options(-ffunction-sections -fdata-sections -fno-exceptions)
-add_compile_options(-mcpu=${TEENSY_CPU} -mfloat-abi=hard -mfpu=${FLOAT_HARDWARE} -mthumb)
+add_compile_options(-ffunction-sections -fdata-sections -funwind-tables -fno-exceptions)
+add_compile_options(-mcpu=${TEENSY_CPU} -mfloat-abi=hard -mfpu=${FLOAT_HARDWARE}) # -mthumb
 string(APPEND CMAKE_CXX_FLAGS "-felide-constructors -fpermissive -fno-rtti") # use add_compile_options instead?
 string(APPEND CMAKE_ASM_FLAGS "-x assembler-with-cpp")
 
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED on)
+# set(CMAKE_CXX_STANDARD_REQUIRED on)
 
 set(CORE_PATH "${TOOLCHAIN_ROOT_PATH}/teensy/avr/cores/${TEENSY_CORE}")
 set(CORE_LIB_PATH "${TOOLCHAIN_ROOT_PATH}/teensy/avr/libraries")
