@@ -7,16 +7,23 @@ namespace Graph {
 void Graph::setSize(lv_coord_t w, lv_coord_t h) {
     lv_obj_set_size(chart, w, h);
     lv_obj_refresh_ext_draw_size(chart);
+    lv_obj_align(chart, LV_ALIGN_CENTER, 0, 0);
 }
 
 void Graph::setPos(lv_coord_t x, lv_coord_t y, lv_align_t align, lv_coord_t x_ofs, lv_coord_t y_ofs) {
-    lv_obj_align(chart, align, x_ofs, y_ofs);
+    lv_obj_set_pos(chart, x, y);
+    // lv_obj_align(chart, align, x_ofs, y_ofs);
     lv_obj_refresh_ext_draw_size(chart);
 }
 
 void Graph::setTitle(const char *text) {
     lv_label_set_text(title, text);
     lv_obj_align_to(title, chart, LV_ALIGN_OUT_TOP_MID, 0, -5);
+}
+
+void Graph::setSubText(const char *text) {
+    lv_label_set_text(sub_text, text);
+    lv_obj_align_to(sub_text, chart, LV_ALIGN_OUT_BOTTOM_LEFT, 10, -22);
 }
 
 void Graph::setMainData(const lv_coord_t *Xs, const lv_coord_t *Ys, const size_t length) {
@@ -92,14 +99,16 @@ void Graph::zoom(uint16_t zoom) {
 
 void Graph::init(void) {
     lv_chart_set_type(chart, LV_CHART_TYPE_SCATTER);
-    lv_obj_set_size(chart, 230, 150);
-    lv_obj_align(chart, LV_ALIGN_CENTER, 0, -10);
-
     lv_obj_set_style_size(chart, 0, 0, LV_PART_INDICATOR);
+    lv_obj_set_style_size(chart, 4, 4, LV_PART_CURSOR);
 
-    lv_chart_set_axis_tick(chart, LV_CHART_AXIS_PRIMARY_Y, 10, 5, 6, 5, true, 40);
+    lv_chart_set_axis_tick(chart, LV_CHART_AXIS_SECONDARY_Y, 10, 5, 6, 5, true, 40);
     lv_chart_set_axis_tick(chart, LV_CHART_AXIS_PRIMARY_X, 10, 5, 8, 4, true, 30);
     lv_chart_set_update_mode(chart, LV_CHART_UPDATE_MODE_SHIFT);
+
+    lv_obj_set_style_line_color(chart, lv_palette_main(LV_PALETTE_GREY), LV_PART_TICKS);
+    lv_obj_set_style_text_font(sub_text, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_color(title, lv_palette_lighten(LV_PALETTE_GREY, 4), 0);
 
     main_series = lv_chart_add_series(chart, lv_palette_main(LV_PALETTE_INDIGO), LV_CHART_AXIS_PRIMARY_Y);
     alt_series = lv_chart_add_series(chart, lv_palette_main(LV_PALETTE_RED), LV_CHART_AXIS_SECONDARY_Y);

@@ -213,7 +213,7 @@
             "dependsOn": [
                 "Build",
                 "Upload",
-                "Monitor"
+                // "Monitor"
             ],
             "options": {
                 "statusbar": {

@@ -58,7 +58,7 @@ void my_touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data) {
 int main(void) {
     Serial.begin(115200);
     tft.begin(SPI_SPEED, 6000000);
-    tft.setRotation(3);                 // landscape mode 320x240
+    tft.setRotation(1);                 // landscape mode 320x240
     tft.setFramebuffer(internal_fb);    // set the internal framebuffer (enables double buffering)
     tft.setDiffBuffers(&diff1, &diff2); // set the 2 diff buffers => activate differential updates.
     tft.setDiffGap(1);                  // use a small gap for the diff buffers (useful because cells are small...)
@@ -85,17 +85,38 @@ int main(void) {
     indev_drv.read_cb = my_touchpad_read;
     lv_indev_drv_register(&indev_drv);
 
-    char buf[128];
-    Graph::Graph g;
-    g.setSize(230, 150);
-    g.setPos(0, 0);
-
     // TODO: Time to peak
+
+    lv_obj_t *tabview = lv_tabview_create(lv_scr_act(), LV_DIR_RIGHT, 35);
+    lv_obj_set_style_bg_color(tabview, lv_palette_darken(LV_PALETTE_GREY, 4), 0);
+
+    lv_obj_t *tab_btns = lv_tabview_get_tab_btns(tabview);
+    lv_obj_set_style_bg_color(tab_btns, lv_palette_darken(LV_PALETTE_GREY, 3), 0);
+    lv_obj_set_style_text_color(tab_btns, lv_palette_lighten(LV_PALETTE_GREY, 5), 0);
+    lv_obj_set_style_border_side(tab_btns, LV_BORDER_SIDE_LEFT, LV_PART_ITEMS | LV_STATE_CHECKED);
+
+    lv_obj_t *tab_ctrl = lv_tabview_add_tab(tabview, LV_SYMBOL_HOME);     // Controls
+    lv_obj_t *tab_grph = lv_tabview_add_tab(tabview, LV_SYMBOL_IMAGE);    // Graph
+    lv_obj_t *tab_selc = lv_tabview_add_tab(tabview, LV_SYMBOL_LIST);     // Paste Select
+    lv_obj_t *tab_sett = lv_tabview_add_tab(tabview, LV_SYMBOL_SETTINGS); // Settings
+    lv_obj_t *tab_abut = lv_tabview_add_tab(tabview, LV_SYMBOL_WARNING);  // About
+
+    char buf[128];
+    Graph::Graph g(tab_grph);
+    g.setSize(ScreenWidth - 82, ScreenHeight - 54);
+    g.setPos(-18, -2);
+
+    lv_tabview_set_act(tabview, 2, LV_ANIM_ON);
+
+    // lv_obj_move_to(tabview, 35, 0);
+    // lv_obj_set_scrollbar_mode(lv_scr_act(), LV_SCROLLBAR_MODE_OFF);
+    // lv_obj_clear_flag(lv_scr_act(), LV_OBJ_FLAG_SCROLL_ELASTIC);
 
     while (true) {
         for (auto &profile : Reflow::PROFILES) {
             double val = 0;
             double time = 0;
+            int32_t rnd = 0;
             elapsedMillis ems, tms;
             g.setMainData(profile.Xs, profile.Ys);
             Reflow::title(profile, buf, 128);
@@ -105,7 +126,7 @@ int main(void) {
             while (true) {
                 if (ems > 5) {
                     ems = 0;
-                    val = spln(time);
+                    val = spln(time) + (rnd += random(-4, 5));
                     g.updateData(time, val);
                     time += 1;
                     if (time > profile.Xs.back())
@@ -114,7 +135,7 @@ int main(void) {
                 if (tms > 50) {
                     tms = 0;
                     Reflow::stateString(profile, val, time, buf, 128);
-                    g.setTitle(buf);
+                    g.setSubText(buf);
                 }
                 lv_task_handler();
             }
