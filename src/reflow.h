@@ -1,71 +1,103 @@
+#include "util.h"
+#include <array>
+
 namespace Reflow {
 
-enum STATE {
-    RAMP_UP,
-    PREHEAT,
-    SOAK,
-    REFLOW,
-    COOL,
+namespace State {
+struct State_t {
+    const char *name;
+};
+const State_t RAMP_UP("Ramping up");
+const State_t PREHEAT("Pre-heating");
+const State_t SOAK("Soaking");
+const State_t REFLOW("Reflowing");
+const State_t COOL("Cooling");
+} // namespace State
+
+struct Alloy_t {
+    const char *str;
 };
 
-const char *REFLOW_STATE_STR[] = {
-    "Ramping up",
-    "Pre-heating",
-    "Soaking",
-    "Reflowing",
-    "Cooling",
-};
+namespace Alloy {
+Alloy_t SnPb("Sn/Pb");
+Alloy_t Sn63Pb37("Sn63/Pb37");
+Alloy_t Sn62Pb36Ag2("Sn62/Pb36/Ag2");
+Alloy_t SnAgCu("Sn/Ag/Cu");
+Alloy_t Sn965Ag3Cu05("Sn96.5/Ag3/Cu0.5");
+} // namespace Alloy
+
+using Timing = std::tuple<State::State_t, int, int>;
 
 struct ReflowProfile {
     const char *name;
-    const char *alloy_target;
-    const int **timing; // STATE enum, seconds, celsius
-    const int len;
-    ReflowProfile(const char *name, const char *alloy_target, const int timing[][3], const int len) : name(name), alloy_target(alloy_target), timing((const int **)timing), len(len) {
+    const Alloy_t mix;
+    const Timing *timing;
+    const int sz;
+    std::vector<double> Xs;
+    std::vector<double> Ys;
+    ReflowProfile(const char *name, const Alloy_t mix, const Timing timing[], const int sz) : name(name), mix(mix), timing(timing), sz(sz) {
+        for (int i = 0; i < sz; i++) {
+            Xs.push_back(std::get<1>(timing[i]));
+            Ys.push_back(std::get<2>(timing[i]));
+        }
     }
-    // const int *getPoint(int sec) {
-    // }
 };
 
-// http://www.chipquik.com/datasheets/SMD291SNL50T3.pdf
-const int REFLOW_PROFILE_CHIPQUIK_TIMING_SNAGCU[][3] = {
-    {RAMP_UP, 0, 25},
-    {RAMP_UP, 90, 150},
-    {PREHEAT, 180, 175},
-    {SOAK, 210, 217},
-    {REFLOW, 240, 249},
-    {REFLOW, 270, 217},
-    {COOL, 281, 175},
-};
-// https://www.kester.com/Portals/0/Documents/Knowledge%20Base/Reflow%20Profile%20for%20SnAgCu%20Alloys.pdf
-const int REFLOW_PROFILE_KESTER_TIMING_SNAGCU[][3] = {
-    {RAMP_UP, 0, 25},
-    {PREHEAT, 90, 150},
-    {SOAK, 180, 210},
-    {REFLOW, 210, 245},
-    {REFLOW, 240, 210},
-    {COOL, 270, 150},
-};
-// https://www.kester.com/Portals/0/Documents/Knowledge%20Base/Standard_Profile.pdf
-const int REFLOW_PROFILE_KESTER_TIMING_SNPB[][3] = {
-    {RAMP_UP, 0, 25},
-    {PREHEAT, 90, 150},
-    {SOAK, 180, 180},
-    {REFLOW, 210, 219},
-    {REFLOW, 240, 180},
-    {COOL, 270, 150},
+void title(const ReflowProfile &profile, char *buf, int sz) {
+    snprintf(buf, sz, "%s - %s", profile.name, profile.mix.str);
+}
+
+const Timing getPoint(const ReflowProfile &profile, int sec) {
+    int i = 0;
+    for (int x : profile.Xs) {
+        if (x >= sec)
+            break;
+        i++;
+    }
+    return profile.timing[i];
+}
+
+const Timing stateString(const ReflowProfile &profile, float temp, int sec, char *buf, int sz) {
+    const Timing ret = getPoint(profile, sec);
+    char t_buf[8];
+    ftoa(temp, t_buf, 8);
+    snprintf(buf, sz, "%s %s @ %is", std::get<0>(ret).name, t_buf, sec);
+    return ret;
+}
+
+const Timing CHIPQUIK_Sn965Ag3Cu05_7[] = {
+    {State::RAMP_UP, 0, 25},
+    {State::RAMP_UP, 90, 150},
+    {State::PREHEAT, 180, 175},
+    {State::SOAK, 210, 217},
+    {State::REFLOW, 240, 249},
+    {State::REFLOW, 270, 217},
+    {State::COOL, 281, 175},
 };
 
-static const ReflowProfile REFLOW_PROFILE_CHIPQUIK_SNAGCU("CHIPQUIK", "Sn96.5/Ag3.0/Cu0.5", REFLOW_PROFILE_CHIPQUIK_TIMING_SNAGCU, 7);
-static const ReflowProfile REFLOW_PROFILE_KESTER_SNAGCU("KESTER", "Sn/Ag/Cu", REFLOW_PROFILE_KESTER_TIMING_SNAGCU, 6);
-static const ReflowProfile REFLOW_PROFILE_KESTER_SNPB_0("KESTER", "n63/Pb37", REFLOW_PROFILE_KESTER_TIMING_SNPB, 6);
-static const ReflowProfile REFLOW_PROFILE_KESTER_SNPB_1("KESTER", "Sn62/Pb36/Ag02", REFLOW_PROFILE_KESTER_TIMING_SNPB, 6);
+const Timing KESTER_SnAgCu_6[] = {
+    {State::RAMP_UP, 0, 25},
+    {State::PREHEAT, 90, 150},
+    {State::SOAK, 180, 210},
+    {State::REFLOW, 210, 245},
+    {State::REFLOW, 240, 210},
+    {State::COOL, 270, 150},
+};
 
-const ReflowProfile REFLOW_PROFILES[] = {
-    REFLOW_PROFILE_CHIPQUIK_SNAGCU,
-    REFLOW_PROFILE_KESTER_SNAGCU,
-    REFLOW_PROFILE_KESTER_SNPB_0,
-    REFLOW_PROFILE_KESTER_SNPB_1,
+const Timing KESTER_SnPb_6[] = {
+    {State::RAMP_UP, 0, 25},
+    {State::PREHEAT, 90, 150},
+    {State::SOAK, 180, 180},
+    {State::REFLOW, 210, 219},
+    {State::REFLOW, 240, 180},
+    {State::COOL, 270, 150},
+};
+
+const std::vector<ReflowProfile> PROFILES = {
+    {"CHIPQUIK", Alloy::Sn965Ag3Cu05, CHIPQUIK_Sn965Ag3Cu05_7, 7},
+    {"KESTER", Alloy::SnAgCu, KESTER_SnAgCu_6, 6},
+    {"KESTER", Alloy::Sn63Pb37, KESTER_SnPb_6, 6},
+    {"KESTER", Alloy::Sn62Pb36Ag2, KESTER_SnPb_6, 6},
 };
 
 } // namespace Reflow

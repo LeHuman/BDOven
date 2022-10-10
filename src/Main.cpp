@@ -85,59 +85,40 @@ int main(void) {
     indev_drv.read_cb = my_touchpad_read;
     lv_indev_drv_register(&indev_drv);
 
-    Graph::Graph g = Graph::Graph();
-
+    char buf[128];
+    Graph::Graph g;
     g.setSize(230, 150);
     g.setPos(0, 0);
-    g.setTitle("Amogus");
 
-    // lv_coord_t Xs[Reflow::REFLOW_PROFILE_CHIPQUIK_SNAGCU.len];
-    // lv_coord_t Ys[Reflow::REFLOW_PROFILE_CHIPQUIK_SNAGCU.len];
-
-    // for (int i = 0; i < Reflow::REFLOW_PROFILE_CHIPQUIK_SNAGCU.len; i++) {
-    //     Xs[i] = Reflow::REFLOW_PROFILE_CHIPQUIK_SNAGCU.timing[i][1];
-    //     Ys[i] = Reflow::REFLOW_PROFILE_CHIPQUIK_SNAGCU.timing[i][2];
-    // }
-
-    // g.setMainData(Xs, Ys, Reflow::REFLOW_PROFILE_CHIPQUIK_SNAGCU.len);
-
-    std::vector<double> Xs = {
-        0,
-        90,
-        180,
-        210,
-        240,
-        270,
-        281,
-    };
-
-    std::vector<double> Ys = {
-        25,
-        150,
-        175,
-        217,
-        249,
-        217,
-        175,
-    };
-
-    g.setMainData(Xs, Ys);
-
-    tk::spline spliner(Xs, Ys, tk::spline::cspline);
-    double time = 0;
-    long rnd = 0;
-
-    elapsedMillis ems;
+    // TODO: Time to peak
 
     while (true) {
-        if (ems > 5) {
-            g.updateData(time, max(spliner(time) + (rnd += random(-8, 9)), 0));
-            time += 0.125;
-            ems = 0;
-            if (time > Xs.back())
-                time = random(283);
+        for (auto &profile : Reflow::PROFILES) {
+            double val = 0;
+            double time = 0;
+            elapsedMillis ems, tms;
+            g.setMainData(profile.Xs, profile.Ys);
+            Reflow::title(profile, buf, 128);
+            g.setTitle(buf);
+            tk::spline spln(profile.Xs, profile.Ys, tk::spline::cspline_hermite);
+
+            while (true) {
+                if (ems > 5) {
+                    ems = 0;
+                    val = spln(time);
+                    g.updateData(time, val);
+                    time += 1;
+                    if (time > profile.Xs.back())
+                        break;
+                }
+                if (tms > 50) {
+                    tms = 0;
+                    Reflow::stateString(profile, val, time, buf, 128);
+                    g.setTitle(buf);
+                }
+                lv_task_handler();
+            }
         }
-        lv_task_handler();
     }
 
     return 0;
