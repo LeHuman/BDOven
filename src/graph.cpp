@@ -101,6 +101,14 @@ void Graph::zoom(uint16_t zoom) {
     lv_chart_set_zoom_y(chart, zoom);
 }
 
+void Graph::setVisible(bool visible) {
+    if (visible) {
+        lv_obj_clear_flag(chart, LV_OBJ_FLAG_HIDDEN);
+    } else {
+        lv_obj_add_flag(chart, LV_OBJ_FLAG_HIDDEN);
+    }
+}
+
 void Graph::init(void) {
     lv_chart_set_type(chart, LV_CHART_TYPE_SCATTER);
     lv_obj_set_style_size(chart, 0, 0, LV_PART_INDICATOR);
@@ -112,7 +120,7 @@ void Graph::init(void) {
 
     lv_obj_set_style_line_color(chart, lv_palette_main(LV_PALETTE_GREY), LV_PART_TICKS);
     lv_obj_set_style_text_font(sub_text, &lv_font_montserrat_12, 0);
-    lv_obj_set_style_text_color(title, lv_palette_lighten(LV_PALETTE_GREY, 4), 0);
+    lv_obj_set_style_text_color(sub_text, lv_palette_darken(LV_PALETTE_GREY, 4), 0);
 
     main_series = lv_chart_add_series(chart, lv_palette_main(LV_PALETTE_INDIGO), LV_CHART_AXIS_PRIMARY_Y);
     alt_series = lv_chart_add_series(chart, lv_palette_main(LV_PALETTE_RED), LV_CHART_AXIS_SECONDARY_Y);

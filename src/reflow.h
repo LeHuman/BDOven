@@ -1,6 +1,8 @@
 #include "util.h"
 #include <array>
 
+#pragma once
+
 namespace Reflow {
 
 namespace State {
@@ -43,26 +45,43 @@ struct ReflowProfile {
     }
 };
 
-void title(const ReflowProfile &profile, char *buf, int sz) {
-    snprintf(buf, sz, "%s - %s", profile.name, profile.mix.str);
+int title(const ReflowProfile *profile, char *buf, int sz) {
+    return snprintf(buf, sz, "%s - %s", profile->name, profile->mix.str);
 }
 
-const Timing getPoint(const ReflowProfile &profile, int sec) {
+const Timing getPoint(const ReflowProfile *profile, int sec) {
     int i = 0;
-    for (int x : profile.Xs) {
+    for (int x : profile->Xs) {
         if (x >= sec)
             break;
         i++;
     }
-    return profile.timing[i];
+    return profile->timing[i];
 }
 
-const Timing stateString(const ReflowProfile &profile, float temp, int sec, char *buf, int sz) {
+const Timing stateString(const ReflowProfile *profile, float temp, int sec, char *buf, int sz) {
     const Timing ret = getPoint(profile, sec);
     char t_buf[8];
     ftoa(temp, t_buf, 8);
     snprintf(buf, sz, "%s %sF° @ %is", std::get<0>(ret).name, t_buf, sec);
     return ret;
+}
+
+const Timing getPeak(const ReflowProfile *profile) {
+    int i = 0, ci = 0;
+    double max = -1;
+    for (double y : profile->Ys) {
+        if (y > max) {
+            max = y;
+            ci = i;
+        }
+        i++;
+    }
+    return profile->timing[ci];
+}
+
+const Timing getLast(const ReflowProfile *profile) {
+    return profile->timing[profile->sz - 1];
 }
 
 const Timing CHIPQUIK_Sn965Ag3Cu05_7[] = {

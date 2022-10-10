@@ -1,5 +1,8 @@
+#include "lv_conf.h"
 #include <ILI9341_T4.h>
 #include <lvgl.h>
+
+#pragma once
 
 #define PIN_SCK 13        // mandatory
 #define PIN_MISO 12       // mandatory

@@ -1,8 +1,8 @@
-
-#pragma once
 #include <lvgl.h>
 #include <stdint.h>
 #include <vector>
+
+#pragma once
 
 namespace Graph {
 
@@ -29,6 +29,7 @@ public:
     Graph(lv_obj_t *parent) : chart(lv_chart_create(parent)), title(lv_label_create(parent)), sub_text(lv_label_create(parent)) { init(); };
 
     void zoom(uint16_t zoom);
+    void setVisible(bool visible);
     void setTitle(const char *text);
     void setSubText(const char *text);
     lv_coord_t updateData(lv_coord_t x, lv_coord_t y);
