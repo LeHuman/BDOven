@@ -63,7 +63,7 @@ const Timing stateString(const ReflowProfile *profile, float temp, int sec, char
     const Timing ret = getPoint(profile, sec);
     char t_buf[8];
     ftoa(temp, t_buf, 8);
-    snprintf(buf, sz, "%s %sF° @ %is", std::get<0>(ret).name, t_buf, sec);
+    snprintf(buf, sz, "%s %sC° @ %is", std::get<0>(ret).name, t_buf, sec);
     return ret;
 }
 

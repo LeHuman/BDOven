@@ -35,7 +35,11 @@ lv_obj_t *tab_abut;
 
 const Reflow::ReflowProfile *select_profile = nullptr;
 const Reflow::ReflowProfile *active_profile = nullptr;
+
 std::atomic_bool baking = false;
+elapsedMicros time_et;
+elapsedMillis poll_et, label_et;
+double temp;
 
 static void selc_event_list_select(lv_event_t *e) {
     lv_event_code_t code = lv_event_get_code(e);
@@ -82,9 +86,12 @@ void begin_baking(const Reflow::ReflowProfile *profile) {
     baking = true;
     // TODO: system check here
     grph_graph->setMainData(profile->Xs, profile->Ys);
+    Reflow::title(profile, buf, STR_BUF_SZ);
+    grph_graph->setTitle(buf);
 }
 void abort_baking() {
     baking = false; // TODO: set delay on enabling baking
+    grph_graph->setTitle("No Profile");
 }
 static void ctrl_event_btn_start(lv_event_t *e) {
     lv_event_code_t code = lv_event_get_code(e);
@@ -125,6 +132,26 @@ static void ctrl_event_btn_abort(lv_event_t *e) {
 // TODO: Heat warning, show when temp is detected as hot
 // TODO: show any issues as tab on left side
 // TODO: Time to peak
+
+double pollTemp() {
+    // TODO: poll temp sensor here
+    return 0;
+}
+
+double TEST_pollTemp(double time = random(300)) {
+    static const Reflow::ReflowProfile *set_profile;
+    static tk::spline spln;
+    static int32_t rnd = 0;
+    if (active_profile != nullptr) {
+        if (set_profile != active_profile) {
+            set_profile = active_profile;
+            spln = tk::spline(set_profile->Xs, set_profile->Ys, tk::spline::cspline_hermite);
+            time_et = 0;
+        }
+        return spln(time) + (rnd += random(-4, 5));
+    }
+    return 0;
+}
 
 int main(void) {
     Display::init();
@@ -182,6 +209,8 @@ int main(void) {
     grph_graph = &g;
     grph_graph->setSize(lv_pct(90), lv_pct(85));
     grph_graph->setPos(-20, -2);
+    grph_graph->setSubText("");
+    grph_graph->setTitle("No Profile");
 
     // Select Tab
     Graph::Graph pg(tab_selc, true);
@@ -219,33 +248,22 @@ int main(void) {
     }
 
     while (true) {
-        for (auto &profile : Reflow::PROFILES) {
-            double val = 0;
-            double time = 0;
-            int32_t rnd = 0;
-            elapsedMillis ems, tms;
-            g.setMainData(profile.Xs, profile.Ys);
-            Reflow::title(&profile, buf, STR_BUF_SZ);
-            g.setTitle(buf);
-            tk::spline spln(profile.Xs, profile.Ys, tk::spline::cspline_hermite);
-
-            while (true) {
-                if (ems > 5) {
-                    ems = 0;
-                    val = spln(time) + (rnd += random(-4, 5));
-                    g.updateData(time, val);
-                    time += 1;
-                    if (time > profile.Xs.back())
-                        break;
+        double time = time_et / 1000000.0;
+        if (poll_et >= 100) {
+            poll_et -= 100;
+            temp = TEST_pollTemp(time);
+            if (baking && active_profile != nullptr) {
+                grph_graph->updateData(time, temp);
+                if (label_et >= 500) {
+                    label_et = 0;
+                    Reflow::stateString(active_profile, temp, time, buf, STR_BUF_SZ);
+                    grph_graph->setSubText(buf);
                 }
-                if (tms > 50) {
-                    tms = 0;
-                    Reflow::stateString(&profile, val, time, buf, STR_BUF_SZ);
-                    g.setSubText(buf);
-                }
-                lv_task_handler();
+            } else {
+                grph_graph->setSubText("");
             }
         }
+        lv_task_handler();
     }
 
     return 0;
