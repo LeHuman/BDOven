@@ -10,9 +10,21 @@ void Graph::setSize(lv_coord_t w, lv_coord_t h) {
     lv_obj_align(chart, LV_ALIGN_CENTER, 0, 0);
 }
 
-void Graph::setPos(lv_coord_t x, lv_coord_t y, lv_align_t align, lv_coord_t x_ofs, lv_coord_t y_ofs) {
+void Graph::align(lv_align_t align, lv_coord_t x_ofs, lv_coord_t y_ofs) {
+    lv_obj_align(chart, align, x_ofs, y_ofs);
+    if (!min_graph) { // TODO: make class template instead of ifs everywhere
+        lv_obj_align_to(title, chart, LV_ALIGN_OUT_TOP_MID, 0, -5);
+        lv_obj_align_to(sub_text, chart, LV_ALIGN_OUT_BOTTOM_LEFT, 10, -22);
+    }
+    lv_obj_refresh_ext_draw_size(chart);
+}
+
+void Graph::setPos(lv_coord_t x, lv_coord_t y) {
     lv_obj_set_pos(chart, x, y);
-    // lv_obj_align(chart, align, x_ofs, y_ofs);
+    if (!min_graph) {
+        lv_obj_align_to(title, chart, LV_ALIGN_OUT_TOP_MID, 0, -5);
+        lv_obj_align_to(sub_text, chart, LV_ALIGN_OUT_BOTTOM_LEFT, 10, -22);
+    }
     lv_obj_refresh_ext_draw_size(chart);
 }
 
@@ -24,15 +36,6 @@ void Graph::setTitle(const char *text) {
 void Graph::setSubText(const char *text) {
     lv_label_set_text(sub_text, text);
     lv_obj_align_to(sub_text, chart, LV_ALIGN_OUT_BOTTOM_LEFT, 10, -22);
-}
-
-void Graph::setMainData(const lv_coord_t *Xs, const lv_coord_t *Ys, const size_t length) {
-    lv_chart_remove_series(chart, main_series);
-    main_series = lv_chart_add_series(chart, lv_palette_main(LV_PALETTE_GREY), LV_CHART_AXIS_PRIMARY_Y);
-    lv_chart_set_point_count(chart, length);
-    for (size_t i = 0; i < length; i++) {
-        lv_chart_set_next_value2(chart, main_series, Xs[i], Ys[i]);
-    }
 }
 
 lv_coord_t Graph::updateData(lv_coord_t x, lv_coord_t y) {
@@ -79,7 +82,8 @@ void Graph::setMainData(const std::vector<double> &Xs, const std::vector<double>
 
     for (int i = 0; i < pnt_cnt; i++) {
         lv_chart_set_next_value2(chart, main_series, resolution * i, spln(resolution * i));
-        lv_chart_set_next_value2(chart, alt_series, resolution * i, spln(resolution * i));
+        if (!min_graph)
+            lv_chart_set_next_value2(chart, alt_series, resolution * i, spln(resolution * i));
     }
 
     for (auto it1 = Xs.begin(), it2 = Ys.begin(); it1 != Xs.end(); ++it1, ++it2) {
@@ -115,6 +119,20 @@ void Graph::init(void) {
 
     top_cur = lv_chart_add_cursor(chart, lv_palette_main(LV_PALETTE_RED), LV_DIR_TOP);
     btm_cur = lv_chart_add_cursor(chart, lv_palette_main(LV_PALETTE_BLUE), LV_DIR_BOTTOM);
+}
+
+void Graph::min_init(void) {
+    lv_chart_set_type(chart, LV_CHART_TYPE_SCATTER);
+    lv_chart_set_update_mode(chart, LV_CHART_UPDATE_MODE_SHIFT);
+
+    lv_obj_set_style_size(chart, 0, 0, LV_PART_INDICATOR);
+    lv_obj_set_style_bg_opa(chart, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_opa(chart, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_pad_all(chart, 0, 0);
+    lv_obj_set_style_outline_pad(chart, 0, 0);
+    lv_chart_set_div_line_count(chart, 0, 0);
+
+    main_series = lv_chart_add_series(chart, lv_palette_main(LV_PALETTE_RED), LV_CHART_AXIS_PRIMARY_Y);
 }
 
 } // namespace Graph

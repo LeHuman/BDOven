@@ -1,17 +1,56 @@
 #include "Arduino.h"
-#include "display.h"
 #include "lv_conf.h"
 #include "spline.h"
 #include <vector>
 
+#include "display.h"
 #include "graph.h"
 #include "reflow.h"
+#include "select.h"
+
+lv_obj_t *tabview;
+Graph::Graph *main_graph;
+Graph::Graph *prev_graph;
+static lv_obj_t *currentButton = NULL;
+const Reflow::ReflowProfile *select_profile;
+const Reflow::ReflowProfile *active_profile;
+
+static void event_handler_select(lv_event_t *e) {
+    lv_event_code_t code = lv_event_get_code(e);
+    lv_obj_t *obj = lv_event_get_target(e);
+    if (code == LV_EVENT_CLICKED) {
+        if (currentButton == obj) {
+            currentButton = NULL;
+        } else {
+            currentButton = obj;
+        }
+        lv_obj_t *parent = lv_obj_get_parent(obj);
+        for (uint32_t i = 0; i < lv_obj_get_child_cnt(parent); i++) {
+            lv_obj_t *child = lv_obj_get_child(parent, i);
+            if (child == currentButton) {
+                lv_obj_add_state(child, LV_STATE_CHECKED);
+                select_profile = (const Reflow::ReflowProfile *)lv_event_get_user_data(e);
+                prev_graph->setMainData(select_profile->Xs, select_profile->Ys);
+            } else {
+                lv_obj_clear_state(child, LV_STATE_CHECKED);
+            }
+        }
+    }
+}
+
+static void event_handler_confirm_select(lv_event_t *e) {
+    lv_event_code_t code = lv_event_get_code(e);
+    if (code == LV_EVENT_CLICKED) {
+        active_profile = select_profile;
+        lv_tabview_set_act(tabview, 0, LV_ANIM_ON);
+    }
+}
 
 int main(void) {
     // TODO: Time to peak
     Display::init();
 
-    lv_obj_t *tabview = lv_tabview_create(lv_scr_act(), LV_DIR_RIGHT, 35);
+    tabview = lv_tabview_create(lv_scr_act(), LV_DIR_RIGHT, lv_pct(10));
     lv_obj_set_style_bg_color(tabview, lv_palette_darken(LV_PALETTE_GREY, 4), 0);
 
     lv_obj_t *tab_btns = lv_tabview_get_tab_btns(tabview);
@@ -27,14 +66,51 @@ int main(void) {
 
     char buf[128];
     Graph::Graph g(tab_grph);
-    g.setSize(Display::Width - 82, Display::Height - 54);
-    g.setPos(-18, -2);
+    main_graph = &g;
+    g.setSize(lv_pct(90), lv_pct(85));
+    g.setPos(-20, -2);
+
+    lv_obj_t *list;
+
+    Graph::Graph pg(tab_selc, true);
+    prev_graph = &pg;
+    pg.setSize(lv_pct(80), lv_pct(40));
+    pg.align(LV_ALIGN_TOP_LEFT);
+
+    lv_obj_t *btn_sel_confirm = lv_btn_create(tab_selc);
+    lv_obj_set_size(btn_sel_confirm, lv_pct(20), lv_pct(35));
+    lv_obj_align(btn_sel_confirm, LV_ALIGN_TOP_RIGHT, 0, 0);
+    lv_obj_set_style_bg_color(btn_sel_confirm, lv_palette_main(LV_PALETTE_GREEN), 0);
+    lv_obj_set_style_shadow_color(btn_sel_confirm, lv_palette_darken(LV_PALETTE_GREEN, 2), 0);
+    lv_obj_add_event_cb(btn_sel_confirm, event_handler_confirm_select, LV_EVENT_CLICKED, NULL);
+    lv_obj_t *btn_sel_confirm_l = lv_label_create(btn_sel_confirm);
+    lv_label_set_text(btn_sel_confirm_l, LV_SYMBOL_OK);
+    lv_obj_align(btn_sel_confirm_l, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_set_style_text_font(btn_sel_confirm_l, &lv_font_montserrat_24, 0);
+
+    list = lv_list_create(tab_selc);
+    lv_obj_set_size(list, lv_pct(100), lv_pct(60));
+    lv_obj_set_style_pad_row(list, 5, 0);
+    lv_obj_set_style_bg_opa(list, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_opa(list, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_pad_all(list, 0, 0);
+    lv_obj_set_style_outline_pad(list, 0, 0);
+    lv_obj_align(list, LV_ALIGN_BOTTOM_MID, 0, 0);
+    lv_obj_set_scrollbar_mode(list, LV_SCROLLBAR_MODE_ACTIVE);
+
+    lv_obj_t *btn;
+    int i;
+    for (auto &profile : Reflow::PROFILES) {
+        btn = lv_btn_create(list);
+        lv_obj_set_width(btn, lv_pct(100));
+        lv_obj_add_event_cb(btn, event_handler_select, LV_EVENT_CLICKED, (void *)&profile);
+
+        lv_obj_t *lab = lv_label_create(btn);
+        Reflow::title(profile, buf, 128);
+        lv_label_set_text(lab, buf);
+    }
 
     lv_tabview_set_act(tabview, 2, LV_ANIM_ON);
-
-    // lv_obj_move_to(tabview, 35, 0);
-    // lv_obj_set_scrollbar_mode(lv_scr_act(), LV_SCROLLBAR_MODE_OFF);
-    // lv_obj_clear_flag(lv_scr_act(), LV_OBJ_FLAG_SCROLL_ELASTIC);
 
     while (true) {
         for (auto &profile : Reflow::PROFILES) {
