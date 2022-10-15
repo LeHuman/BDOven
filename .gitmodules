@@ -13,3 +13,6 @@
 [submodule "libraries/spline"]
 	path = libraries/spline
 	url = https://github.com/ttk592/spline
+[submodule "libraries/PID-Library"]
+	path = libraries/PID-Library
+	url = https://github.com/Majid-Derhambakhsh/PID-Library/
