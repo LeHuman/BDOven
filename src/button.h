@@ -4,11 +4,11 @@
 #pragma once
 
 class Button {
-    lv_obj_t *btn = nullptr;
-    lv_obj_t *lbl = nullptr;
     std::atomic_bool disabled;
 
 public:
+    lv_obj_t *btn = nullptr;
+    lv_obj_t *lbl = nullptr;
     Button() = default;
     Button(lv_obj_t *parent) : btn(lv_btn_create(parent)), lbl(lv_label_create(btn)) {}
     Button *operator=(const Button &btn) {
@@ -46,6 +46,9 @@ public:
     }
     void setAlign(lv_align_t align, lv_coord_t x_ofs = 0, lv_coord_t y_ofs = 0) {
         lv_obj_align(btn, align, x_ofs, y_ofs);
+    }
+    void setPos(lv_coord_t x = 0, lv_coord_t y = 0) {
+        lv_obj_set_pos(btn, x, y);
     }
     void setSize(lv_coord_t w, lv_coord_t h) {
         lv_obj_set_size(btn, w, h);

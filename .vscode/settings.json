@@ -73,7 +73,13 @@
         "concepts": "cpp",
         "cstddef": "cpp",
         "iterator": "cpp",
-        "numbers": "cpp"
+        "numbers": "cpp",
+        "cassert": "cpp",
+        "cerrno": "cpp",
+        "cfloat": "cpp",
+        "climits": "cpp",
+        "ios": "cpp",
+        "cstdbool": "cpp"
     },
     "C_Cpp.clang_format_fallbackStyle": "{ BasedOnStyle: LLVM, UseTab: Never, IndentWidth: 4, TabWidth: 4, BreakBeforeBraces: Attach, AllowShortIfStatementsOnASingleLine: false, IndentCaseLabels: false, ColumnLimit: 0, AccessModifierOffset: -4 }",
     "search.exclude": {

@@ -1,11 +1,14 @@
 #include "Arduino.h"
+#include "pid.h"
 #include "spline.h"
 #include <atomic>
 #include <vector>
 
+#include "animation.h"
 #include "button.h"
 #include "display.h"
 #include "graph.h"
+#include "notice.h"
 #include "reflow.h"
 
 #define STR_BUF_SZ 256
@@ -36,10 +39,13 @@ lv_obj_t *tab_abut;
 const Reflow::ReflowProfile *select_profile = nullptr;
 const Reflow::ReflowProfile *active_profile = nullptr;
 
+PID TPID;
 std::atomic_bool baking = false;
 elapsedMicros time_et;
 elapsedMillis poll_et, label_et;
-double temp;
+double temp, tempTarget, tempDV;
+char tempBuf[512];
+const char Kp = 2, Ki = 5, Kd = 1;
 
 static void selc_event_list_select(lv_event_t *e) {
     lv_event_code_t code = lv_event_get_code(e);
@@ -153,9 +159,15 @@ double TEST_pollTemp(double time = random(300)) {
     return 0;
 }
 
+void notice_test_cb(notice *noti) {
+    lv_tabview_set_act(tabview, 3, LV_ANIM_ON);
+    noti->jiggle(1000, 15);
+}
+
 int main(void) {
     Display::init();
 
+    // TODO: add tabview fade in/out title
     tabview = lv_tabview_create(lv_scr_act(), LV_DIR_RIGHT, lv_pct(10));
     lv_obj_set_style_bg_color(tabview, lv_palette_darken(LV_PALETTE_GREY, 4), 0);
     lv_obj_set_style_text_color(tabview, lv_palette_lighten(LV_PALETTE_GREY, 4), 0);
@@ -170,6 +182,13 @@ int main(void) {
     tab_selc = lv_tabview_add_tab(tabview, LV_SYMBOL_LIST);     // Paste Select
     tab_sett = lv_tabview_add_tab(tabview, LV_SYMBOL_SETTINGS); // Settings
     tab_abut = lv_tabview_add_tab(tabview, LV_SYMBOL_WARNING);  // About
+
+    // Global
+
+    notice noti(lv_scr_act(), notice_test_cb);
+    noti.setLabel(LV_SYMBOL_POWER);
+    noti.setColor(LV_PALETTE_RED);
+    noti.setHeight(45);
 
     // Controls Tab
     ctrl_label_select = lv_label_create(tab_ctrl);
@@ -247,6 +266,11 @@ int main(void) {
         lv_label_set_text(lab, buf);
     }
 
+    TPID.Init(&temp, &tempDV, &tempTarget, Kp, Ki, Kd, _PID_P_ON_E, _PID_CD_DIRECT);
+    TPID.SetMode(_PID_MODE_AUTOMATIC);
+    TPID.SetSampleTime(100);
+    TPID.SetOutputLimits(0, 300);
+
     while (true) {
         double time = time_et / 1000000.0;
         if (poll_et >= 100) {
@@ -261,6 +285,10 @@ int main(void) {
                 }
             } else {
                 grph_graph->setSubText("");
+            }
+            TPID.Compute();
+            if (random(100) > 98) {
+                noti.jiggle();
             }
         }
         lv_task_handler();
