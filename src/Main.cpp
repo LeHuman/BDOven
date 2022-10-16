@@ -159,9 +159,11 @@ double TEST_pollTemp(double time = random(300)) {
     return 0;
 }
 
-void notice_test_cb(notice *noti) {
+NoticeBoard *nb;
+
+void notice_test_cb(Notice *noti) {
     lv_tabview_set_act(tabview, 3, LV_ANIM_ON);
-    noti->jiggle(1000, 15);
+    nb->clearNotice(noti);
 }
 
 int main(void) {
@@ -184,11 +186,13 @@ int main(void) {
     tab_abut = lv_tabview_add_tab(tabview, LV_SYMBOL_WARNING);  // About
 
     // Global
+    NoticeBoard _nb(lv_scr_act(), 8);
+    nb = &_nb;
+    Notice *pwr_noti = nb->addNotice(LV_SYMBOL_POWER, notice_test_cb, LV_PALETTE_RED);
+    Notice *tst_noti = nb->addNotice(LV_SYMBOL_BATTERY_2, notice_test_cb, LV_PALETTE_AMBER);
 
-    notice noti(lv_scr_act(), notice_test_cb);
-    noti.setLabel(LV_SYMBOL_POWER);
-    noti.setColor(LV_PALETTE_RED);
-    noti.setHeight(45);
+    nb->pushNotice(tst_noti, true);
+    nb->pushNotice(pwr_noti);
 
     // Controls Tab
     ctrl_label_select = lv_label_create(tab_ctrl);
@@ -287,10 +291,8 @@ int main(void) {
                 grph_graph->setSubText("");
             }
             TPID.Compute();
-            if (random(100) > 98) {
-                noti.jiggle();
-            }
         }
+        nb->update();
         lv_task_handler();
     }
 
