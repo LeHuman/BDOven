@@ -56,14 +56,18 @@ const Timing getPoint(const ReflowProfile *profile, int sec) {
             break;
         i++;
     }
+    if (i >= profile->sz)
+        i = profile->sz - 1;
     return profile->timing[i];
 }
 
-const Timing stateString(const ReflowProfile *profile, float temp, int sec, char *buf, int sz) {
+const Timing stateString(const ReflowProfile *profile, float temp, float target, int sec, char *buf, int sz) {
     const Timing ret = getPoint(profile, sec);
     char t_buf[8];
     ftoa(temp, t_buf, 8);
-    snprintf(buf, sz, "%s %sC° @ %is", std::get<0>(ret).name, t_buf, sec);
+    char tt_buf[8];
+    ftoa(target, tt_buf, 8);
+    snprintf(buf, sz, "%s %sC°/%sC° @ %is", std::get<0>(ret).name, t_buf, tt_buf, sec);
     return ret;
 }
 

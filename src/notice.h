@@ -31,7 +31,7 @@ class Notice { // TODO: animation lock
 
     static void anim_ready_handle(struct _lv_anim_t *a) {
         Notice *self = (Notice *)lv_anim_get_user_data(a);
-        lv_obj_set_style_opa(self->btn.btn, LV_OPA_30, 0);
+        lv_obj_set_style_opa(self->btn.btn, LV_OPA_60, 0);
     }
 
 public:
@@ -57,7 +57,7 @@ public:
         lv_obj_set_style_pad_all(btn.btn, pad, 0);
         lv_obj_set_style_pad_right(btn.btn, pad / 2, 0);
         lv_obj_set_style_text_font(btn.btn, &lv_font_montserrat_12, 0);
-        lv_obj_set_style_opa(btn.btn, LV_OPA_30, 0);
+        lv_obj_set_style_opa(btn.btn, LV_OPA_60, 0);
     }
 
     void setVisible(bool visible) {

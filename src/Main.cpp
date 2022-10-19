@@ -11,9 +11,10 @@
 #include "notice.h"
 #include "reflow.h"
 
-#define STR_BUF_SZ 256
+#define PIN_HEATER_RELAY 15
+#define TEMP_HOT 37
 
-char buf[STR_BUF_SZ];
+char buf[BUFSIZ];
 
 lv_obj_t *tabview;
 
@@ -42,10 +43,13 @@ const Reflow::ReflowProfile *active_profile = nullptr;
 PID TPID;
 std::atomic_bool baking = false;
 elapsedMicros time_et;
-elapsedMillis poll_et, label_et;
-double temp, tempTarget, tempDV;
+elapsedMillis poll_et;
+double temp = 24, PIDOut, tempTarget;
 char tempBuf[512];
-const char Kp = 2, Ki = 5, Kd = 1;
+const float Kp = 2, Ki = 5, Kd = 1;
+
+NoticeBoard *nb;
+Notice *pwr_noti, *hot_noti;
 
 static void selc_event_list_select(lv_event_t *e) {
     lv_event_code_t code = lv_event_get_code(e);
@@ -81,9 +85,9 @@ static void selc_event_btn_confirm(lv_event_t *e) {
         ctrl_btn_start.disable(false);
         Reflow::Timing peak = Reflow::getPeak(active_profile);
         Reflow::Timing last = Reflow::getLast(active_profile);
-        int cnt = Reflow::title(active_profile, buf, STR_BUF_SZ);
+        int cnt = Reflow::title(active_profile, buf, BUFSIZ);
         char *_buf = buf + cnt;
-        snprintf(_buf, STR_BUF_SZ - cnt, "\nPeak: %dC°@%ds\nETA: %ds", std::get<1>(peak), std::get<2>(peak), std::get<1>(last));
+        snprintf(_buf, BUFSIZ - cnt, "\nPeak: %dC°@%ds\nETA: %ds", std::get<1>(peak), std::get<2>(peak), std::get<1>(last));
         lv_label_set_text(ctrl_label_select, buf);
         lv_tabview_set_act(tabview, 0, LV_ANIM_ON);
     }
@@ -92,7 +96,7 @@ void begin_baking(const Reflow::ReflowProfile *profile) {
     baking = true;
     // TODO: system check here
     grph_graph->setMainData(profile->Xs, profile->Ys);
-    Reflow::title(profile, buf, STR_BUF_SZ);
+    Reflow::title(profile, buf, BUFSIZ);
     grph_graph->setTitle(buf);
 }
 void abort_baking() {
@@ -135,9 +139,15 @@ static void ctrl_event_btn_abort(lv_event_t *e) {
     }
 }
 
-// TODO: Heat warning, show when temp is detected as hot
-// TODO: show any issues as tab on left side
-// TODO: Time to peak
+// TODO: look ahead with PID
+
+void enableHeater(bool enable) {
+    digitalWriteFast(PIN_HEATER_RELAY, enable);
+    if (enable)
+        nb->pushNotice(pwr_noti, true);
+    else
+        nb->clearNotice(pwr_noti);
+}
 
 double pollTemp() {
     // TODO: poll temp sensor here
@@ -145,21 +155,15 @@ double pollTemp() {
 }
 
 double TEST_pollTemp(double time = random(300)) {
-    static const Reflow::ReflowProfile *set_profile;
-    static tk::spline spln;
-    static int32_t rnd = 0;
-    if (active_profile != nullptr) {
-        if (set_profile != active_profile) {
-            set_profile = active_profile;
-            spln = tk::spline(set_profile->Xs, set_profile->Ys, tk::spline::cspline_hermite);
-            time_et = 0;
-        }
-        return spln(time) + (rnd += random(-4, 5));
+    static float curr_accel = 0;
+    if (PIDOut) {
+        curr_accel = min(curr_accel + 0.008 + (curr_accel > 0 ? 0.02 : 0), 5);
+    } else {
+        curr_accel = max(curr_accel - 0.05, -0.5);
     }
-    return 0;
-}
 
-NoticeBoard *nb;
+    return max(temp + curr_accel, 24);
+}
 
 void notice_test_cb(Notice *noti) {
     lv_tabview_set_act(tabview, 3, LV_ANIM_ON);
@@ -188,11 +192,8 @@ int main(void) {
     // Global
     NoticeBoard _nb(lv_scr_act(), 8);
     nb = &_nb;
-    Notice *pwr_noti = nb->addNotice(LV_SYMBOL_POWER, notice_test_cb, LV_PALETTE_RED);
-    Notice *tst_noti = nb->addNotice(LV_SYMBOL_BATTERY_2, notice_test_cb, LV_PALETTE_AMBER);
-
-    nb->pushNotice(tst_noti, true);
-    nb->pushNotice(pwr_noti);
+    pwr_noti = nb->addNotice(LV_SYMBOL_CHARGE, notice_test_cb, LV_PALETTE_YELLOW);
+    hot_noti = nb->addNotice(LV_SYMBOL_WARNING, notice_test_cb, LV_PALETTE_RED); // TODO: fire symbol
 
     // Controls Tab
     ctrl_label_select = lv_label_create(tab_ctrl);
@@ -266,31 +267,38 @@ int main(void) {
         lv_obj_add_event_cb(btn, selc_event_list_select, LV_EVENT_CLICKED, (void *)&profile);
 
         lv_obj_t *lab = lv_label_create(btn);
-        Reflow::title(&profile, buf, STR_BUF_SZ);
+        Reflow::title(&profile, buf, BUFSIZ);
         lv_label_set_text(lab, buf);
     }
 
-    TPID.Init(&temp, &tempDV, &tempTarget, Kp, Ki, Kd, _PID_P_ON_E, _PID_CD_DIRECT);
+    TPID.Init(&temp, &PIDOut, &tempTarget, Kp, Ki, Kd, _PID_P_ON_E, _PID_CD_DIRECT);
     TPID.SetMode(_PID_MODE_AUTOMATIC);
     TPID.SetSampleTime(100);
-    TPID.SetOutputLimits(0, 300);
+    TPID.SetOutputLimits(0, 1); // Either off or on, no PWM control
+
+    pinMode(PIN_HEATER_RELAY, OUTPUT);
 
     while (true) {
         double time = time_et / 1000000.0;
         if (poll_et >= 100) {
             poll_et -= 100;
+
             temp = TEST_pollTemp(time);
+
             if (baking && active_profile != nullptr) {
-                grph_graph->updateData(time, temp);
-                if (label_et >= 500) {
-                    label_et = 0;
-                    Reflow::stateString(active_profile, temp, time, buf, STR_BUF_SZ);
-                    grph_graph->setSubText(buf);
-                }
+                tempTarget = grph_graph->updateData(time, temp);
+                enableHeater((bool)PIDOut);
+                TPID.Compute();
+                Reflow::stateString(active_profile, temp, tempTarget, time, buf, BUFSIZ);
+                grph_graph->setSubText(buf);
             } else {
                 grph_graph->setSubText("");
             }
-            TPID.Compute();
+
+            if (temp > TEMP_HOT)
+                nb->pushNotice(hot_noti);
+            else
+                nb->clearNotice(hot_noti);
         }
         nb->update();
         lv_task_handler();
