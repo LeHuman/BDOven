@@ -9,6 +9,9 @@
 
 #pragma once
 
+#define JIGGLE_TIME_URGENT 5000
+#define JIGGLE_TIME_DEFAULT 15000
+
 class Notice;
 
 using notice_cb_t = void (*)(Notice *);
@@ -17,11 +20,14 @@ using notice_cb_t = void (*)(Notice *);
 const int NoticeHeight = LV_NOTICE_PAD_DEFAULT * 4;
 
 class Notice { // TODO: animation lock
-    lv_anim_t jiggle_anim;
-    lv_anim_t peek_anim;
+    lv_anim_t peek_anim, jiggle_anim, fade_anim, vert_anim;
     lv_coord_t l_moved = 0;
     Button btn;
     notice_cb_t cb = 0;
+
+    static void fade_anim_cb(void *obj, int32_t v) {
+        lv_obj_set_style_opa((_lv_obj_t *)obj, v, 0);
+    }
 
     static void click_handle(lv_event_t *e) {
         Notice *self = (Notice *)lv_event_get_user_data(e);
@@ -31,7 +37,8 @@ class Notice { // TODO: animation lock
 
     static void anim_ready_handle(struct _lv_anim_t *a) {
         Notice *self = (Notice *)lv_anim_get_user_data(a);
-        lv_obj_set_style_opa(self->btn.btn, LV_OPA_60, 0);
+        lv_anim_set_values(&self->fade_anim, lv_obj_get_style_opa(self->btn.btn, 0), LV_OPA_60);
+        lv_anim_start(&self->fade_anim);
     }
 
 public:
@@ -52,12 +59,25 @@ public:
         lv_anim_set_exec_cb(&peek_anim, lv_anim_x_cb);
         lv_anim_set_path_cb(&peek_anim, lv_anim_path_linear);
 
+        lv_anim_init(&vert_anim);
+        lv_anim_set_time(&vert_anim, 50);
+        lv_anim_set_var(&vert_anim, btn.btn);
+        lv_anim_set_exec_cb(&vert_anim, lv_anim_y_cb);
+        lv_anim_set_path_cb(&vert_anim, lv_anim_path_ease_in);
+
+        lv_anim_init(&fade_anim);
+        lv_anim_set_var(&fade_anim, btn.btn);
+        lv_anim_set_exec_cb(&fade_anim, fade_anim_cb);
+
         lv_obj_add_event_cb(btn.btn, click_handle, LV_EVENT_CLICKED, (void *)this);
 
         lv_obj_set_style_pad_all(btn.btn, pad, 0);
         lv_obj_set_style_pad_right(btn.btn, pad / 2, 0);
         lv_obj_set_style_text_font(btn.btn, &lv_font_montserrat_12, 0);
         lv_obj_set_style_opa(btn.btn, LV_OPA_60, 0);
+
+        lv_obj_set_x(btn.btn, (pad / 2) * -8);
+        lv_obj_set_style_pad_left(btn.btn, (pad / 2) + ((pad / 2) * 8), 0);
     }
 
     void setVisible(bool visible) {
@@ -72,10 +92,9 @@ public:
         btn.setLabel(text);
     }
 
-    // TODO: animate
-    void setHeight(lv_coord_t y, lv_coord_t pad = LV_NOTICE_PAD_DEFAULT / 2) {
-        btn.setPos(-pad * 8, y);
-        lv_obj_set_style_pad_left(btn.btn, pad + (pad * 8), 0);
+    void setHeight(lv_coord_t y) {
+        lv_anim_set_values(&vert_anim, lv_obj_get_y(btn.btn), y);
+        lv_anim_start(&vert_anim);
     }
 
     void setColor(lv_palette_t color) {
@@ -84,7 +103,10 @@ public:
 
     // FIXME: spamming can cause obj to move
     void jiggle(uint32_t duration = 500, int32_t amount = 25) {
-        lv_obj_set_style_opa(btn.btn, LV_OPA_80, 0);
+        lv_anim_set_values(&fade_anim, lv_obj_get_style_opa(btn.btn, 0), LV_OPA_COVER);
+        lv_anim_set_time(&fade_anim, duration / 4);
+        lv_anim_start(&fade_anim);
+
         lv_anim_set_time(&jiggle_anim, duration);
         lv_anim_set_values(&jiggle_anim, lv_obj_get_x(btn.btn), lv_obj_get_x(btn.btn) + amount);
         lv_anim_start(&jiggle_anim);
@@ -115,13 +137,14 @@ public:
         a->setVisible(false);
         return a;
     }
+
     void pushNotice(Notice *notice, bool urgent = false) {
         if (board.contains(notice))
             return;
         board.insert(notice);
         invalid = true;
         notice->urgent = urgent;
-        notice->ems = 0;
+        notice->ems = urgent ? JIGGLE_TIME_URGENT * 3 / 4 : JIGGLE_TIME_DEFAULT * 3 / 4;
     }
     void rotateNotices() {
         std::rotate(notices.begin(), notices.begin() + 1, notices.end());
@@ -148,10 +171,10 @@ public:
         }
 
         for (auto n : board) {
-            if (n->urgent && n->ems > 5000) {
+            if (n->urgent && n->ems > JIGGLE_TIME_URGENT) {
                 n->ems = 0;
                 n->jiggle(500, 50);
-            } else if (n->ems > 15000) {
+            } else if (n->ems > JIGGLE_TIME_DEFAULT) {
                 n->ems = 0;
                 n->jiggle();
             }

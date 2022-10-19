@@ -51,6 +51,65 @@ const float Kp = 2, Ki = 5, Kd = 1;
 NoticeBoard *nb;
 Notice *pwr_noti, *hot_noti;
 
+void enableHeater(bool enable) {
+    enable *= baking;
+    digitalWriteFast(PIN_HEATER_RELAY, enable);
+    if (enable)
+        nb->pushNotice(pwr_noti, true);
+    else
+        nb->clearNotice(pwr_noti);
+}
+
+double TEST_pollTemp() {
+    static float curr_accel = 0;
+    if (PIDOut && baking) {
+        curr_accel = min(curr_accel + 0.008 + (curr_accel > 0 ? 0.02 : 0), 5);
+    } else {
+        curr_accel = max(curr_accel - 0.05, -0.5);
+    }
+
+    return max(temp + curr_accel, 24);
+}
+
+double pollTemp() {
+    // TODO: poll temp sensor here
+    return TEST_pollTemp();
+}
+
+void set_reflow_profile(const Reflow::ReflowProfile *profile = nullptr) {
+    if (!profile) {
+        grph_graph->setTitle("No Profile");
+        lv_label_set_text(ctrl_label_select, "No Profile Selected");
+    } else {
+        grph_graph->setMainData(profile->Xs, profile->Ys);
+        Reflow::title(profile, buf, BUFSIZ);
+        grph_graph->setTitle(buf);
+    }
+    active_profile = profile;
+}
+
+void begin_reflow(const Reflow::ReflowProfile *profile) {
+    time_et = 0;
+    poll_et = 0;
+    tempTarget = 0;
+    PIDOut = 0;
+    baking = true;
+    // TODO: system check here
+}
+
+// safely stop reflow
+void stop_reflow() {
+    enableHeater(0);
+    set_reflow_profile();
+    ctrl_btn_start.disable(true);
+    ctrl_btn_pause.disable(true);
+    baking = false; // TODO: set delay on enabling baking, let system cool down first
+}
+
+void abort_reflow() { // TODO: take extra safety precautions here
+    stop_reflow();
+}
+
 static void selc_event_list_select(lv_event_t *e) {
     lv_event_code_t code = lv_event_get_code(e);
     lv_obj_t *obj = lv_event_get_target(e);
@@ -77,11 +136,10 @@ static void selc_event_list_select(lv_event_t *e) {
         }
     }
 }
-
 static void selc_event_btn_confirm(lv_event_t *e) {
     lv_event_code_t code = lv_event_get_code(e);
     if (code == LV_EVENT_CLICKED && select_profile != nullptr && !baking) {
-        active_profile = select_profile;
+        set_reflow_profile(select_profile);
         ctrl_btn_start.disable(false);
         Reflow::Timing peak = Reflow::getPeak(active_profile);
         Reflow::Timing last = Reflow::getLast(active_profile);
@@ -92,23 +150,13 @@ static void selc_event_btn_confirm(lv_event_t *e) {
         lv_tabview_set_act(tabview, 0, LV_ANIM_ON);
     }
 }
-void begin_baking(const Reflow::ReflowProfile *profile) {
-    baking = true;
-    // TODO: system check here
-    grph_graph->setMainData(profile->Xs, profile->Ys);
-    Reflow::title(profile, buf, BUFSIZ);
-    grph_graph->setTitle(buf);
-}
-void abort_baking() {
-    baking = false; // TODO: set delay on enabling baking
-    grph_graph->setTitle("No Profile");
-}
+
 static void ctrl_event_btn_start(lv_event_t *e) {
     lv_event_code_t code = lv_event_get_code(e);
     if (!baking && active_profile != nullptr && code == LV_EVENT_CLICKED) {
         ctrl_btn_start.disable(true);
         ctrl_btn_pause.disable(false);
-        begin_baking(active_profile);
+        begin_reflow(active_profile);
     }
 }
 static void ctrl_event_btn_pause(lv_event_t *e) {
@@ -128,47 +176,13 @@ static void ctrl_event_btn_pause(lv_event_t *e) {
 static void ctrl_event_btn_abort(lv_event_t *e) {
     lv_event_code_t code = lv_event_get_code(e);
     if (code == LV_EVENT_CLICKED || code == LV_EVENT_RELEASED) { // Will trigger if touched in anyway
-        // TODO: reset ui func
-        ctrl_btn_start.disable(true);
-        ctrl_btn_pause.disable(true);
-        lv_label_set_text(ctrl_label_select, "No Profile Selected");
-        active_profile = nullptr;
-        abort_baking();
+        abort_reflow();
     } else if (code == LV_EVENT_PRESSED) {
         lv_label_set_text(ctrl_label_select, "ABORT");
     }
 }
 
 // TODO: look ahead with PID
-
-void enableHeater(bool enable) {
-    digitalWriteFast(PIN_HEATER_RELAY, enable);
-    if (enable)
-        nb->pushNotice(pwr_noti, true);
-    else
-        nb->clearNotice(pwr_noti);
-}
-
-double pollTemp() {
-    // TODO: poll temp sensor here
-    return 0;
-}
-
-double TEST_pollTemp(double time = random(300)) {
-    static float curr_accel = 0;
-    if (PIDOut) {
-        curr_accel = min(curr_accel + 0.008 + (curr_accel > 0 ? 0.02 : 0), 5);
-    } else {
-        curr_accel = max(curr_accel - 0.05, -0.5);
-    }
-
-    return max(temp + curr_accel, 24);
-}
-
-void notice_test_cb(Notice *noti) {
-    lv_tabview_set_act(tabview, 3, LV_ANIM_ON);
-    nb->clearNotice(noti);
-}
 
 int main(void) {
     Display::init();
@@ -192,8 +206,8 @@ int main(void) {
     // Global
     NoticeBoard _nb(lv_scr_act(), 8);
     nb = &_nb;
-    pwr_noti = nb->addNotice(LV_SYMBOL_CHARGE, notice_test_cb, LV_PALETTE_YELLOW);
-    hot_noti = nb->addNotice(LV_SYMBOL_WARNING, notice_test_cb, LV_PALETTE_RED); // TODO: fire symbol
+    pwr_noti = nb->addNotice(LV_SYMBOL_CHARGE, 0, LV_PALETTE_YELLOW);
+    hot_noti = nb->addNotice(LV_SYMBOL_WARNING, 0, LV_PALETTE_RED); // TODO: fire symbol
 
     // Controls Tab
     ctrl_label_select = lv_label_create(tab_ctrl);
@@ -274,7 +288,7 @@ int main(void) {
     TPID.Init(&temp, &PIDOut, &tempTarget, Kp, Ki, Kd, _PID_P_ON_E, _PID_CD_DIRECT);
     TPID.SetMode(_PID_MODE_AUTOMATIC);
     TPID.SetSampleTime(100);
-    TPID.SetOutputLimits(0, 1); // Either off or on, no PWM control
+    TPID.SetOutputLimits(0, 1); // binary, no PWM control // TODO: fan/exhaust control? [-1,1]
 
     pinMode(PIN_HEATER_RELAY, OUTPUT);
 
@@ -283,7 +297,7 @@ int main(void) {
         if (poll_et >= 100) {
             poll_et -= 100;
 
-            temp = TEST_pollTemp(time);
+            temp = pollTemp();
 
             if (baking && active_profile != nullptr) {
                 tempTarget = grph_graph->updateData(time, temp);
@@ -291,14 +305,20 @@ int main(void) {
                 TPID.Compute();
                 Reflow::stateString(active_profile, temp, tempTarget, time, buf, BUFSIZ);
                 grph_graph->setSubText(buf);
+                if (time > std::get<1>(Reflow::getLast(active_profile))) // IMPROVE: better stop logic?
+                    stop_reflow();
             } else {
+                enableHeater(0);
                 grph_graph->setSubText("");
             }
 
-            if (temp > TEMP_HOT)
+            if (temp > TEMP_HOT) {
+                sprintf(buf, "%iC°", (int)temp);
+                hot_noti->setLabel(buf);
                 nb->pushNotice(hot_noti);
-            else
+            } else {
                 nb->clearNotice(hot_noti);
+            }
         }
         nb->update();
         lv_task_handler();
