@@ -102,15 +102,7 @@ file(GLOB_RECURSE CORE_SRC ${CORE_PATH}/*.S | ${CORE_PATH}/*.c | ${CORE_PATH}/*.
 add_library(core STATIC ${CORE_SRC})
 target_include_directories(core PUBLIC ${CORE_PATH} ${CORE_INCLUDE})
 
-HEADER_DIRECTORIES(LIBRARY_INCLUDE ${LIBRARY_PATH})
-file(GLOB_RECURSE LIB_SRC ${LIBRARY_PATH}/*.S | ${LIBRARY_PATH}/*.c | ${LIBRARY_PATH}/*.cpp)
-
-add_library(libraries STATIC ${LIB_SRC})
-target_include_directories(libraries PUBLIC ${LIBRARY_PATH} ${LIBRARY_INCLUDE})
-target_link_libraries(libraries core)
-
-add_subdirectory(libraries/lvgl)
-target_link_libraries(lvgl libraries)
+add_subdirectory(${LIBRARY_PATH})
 
 # Executable
 
