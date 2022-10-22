@@ -10,6 +10,7 @@
 #include "graph.h"
 #include "notice.h"
 #include "reflow.h"
+#include "toaster.h"
 
 #define PIN_HEATER_RELAY 15
 #define TEMP_HOT 37
@@ -17,6 +18,7 @@
 char buf[BUFSIZ];
 
 lv_obj_t *tabview;
+Toaster toast;
 
 lv_obj_t *tab_ctrl;
 lv_obj_t *ctrl_label_select;
@@ -49,7 +51,35 @@ char tempBuf[512];
 const float Kp = 2, Ki = 5, Kd = 1;
 
 NoticeBoard *nb;
-Notice *pwr_noti, *hot_noti;
+Notice *pwr_noti, *hot_noti, *no_prof;
+
+const char *tab_names[] = {
+    "Controls",
+    "Graph",
+    "Solder Selection",
+    "Settings",
+    "Faults",
+};
+
+static int last_tab = -1;
+
+static void tabview_new_tab(lv_event_t *e = 0) {
+    LV_UNUSED(e);
+    int curr = lv_tabview_get_tab_act(tabview);
+    if (curr != last_tab)
+        toast.toast(tab_names[curr]);
+    last_tab = curr;
+}
+
+static void tabview_set_tab(int tab) {
+    lv_tabview_set_act(tabview, tab, LV_ANIM_ON);
+    tabview_new_tab();
+}
+
+void notice_no_profile(Notice *noti) {
+    tabview_set_tab(2);
+    toast.toast("Select a Profile");
+}
 
 void enableHeater(bool enable) {
     enable *= baking;
@@ -147,7 +177,8 @@ static void selc_event_btn_confirm(lv_event_t *e) {
         char *_buf = buf + cnt;
         snprintf(_buf, BUFSIZ - cnt, "\nPeak: %dC°@%ds\nETA: %ds", std::get<1>(peak), std::get<2>(peak), std::get<1>(last));
         lv_label_set_text(ctrl_label_select, buf);
-        lv_tabview_set_act(tabview, 0, LV_ANIM_ON);
+        tabview_set_tab(0);
+        toast.toast("Profile Loaded");
     }
 }
 
@@ -192,27 +223,39 @@ int main(void) {
     lv_obj_set_style_bg_color(tabview, lv_palette_darken(LV_PALETTE_GREY, 4), 0);
     lv_obj_set_style_text_color(tabview, lv_palette_lighten(LV_PALETTE_GREY, 4), 0);
 
+    toast = Toaster(lv_scr_act());
+    toast.setPos(16, Display::Height - 48);
+    toast.setColor(LV_PALETTE_GREY);
+    toast.setFont(&lv_font_montserrat_16);
+
+    lv_obj_add_event_cb(tabview, tabview_new_tab, LV_EVENT_VALUE_CHANGED, 0);
+
     lv_obj_t *tab_btns = lv_tabview_get_tab_btns(tabview);
     lv_obj_set_style_bg_color(tab_btns, lv_palette_darken(LV_PALETTE_GREY, 3), 0);
     lv_obj_set_style_text_color(tab_btns, lv_palette_lighten(LV_PALETTE_GREY, 5), 0);
     lv_obj_set_style_border_side(tab_btns, LV_BORDER_SIDE_LEFT, LV_PART_ITEMS | LV_STATE_CHECKED);
 
-    tab_ctrl = lv_tabview_add_tab(tabview, LV_SYMBOL_HOME);     // Controls
-    tab_grph = lv_tabview_add_tab(tabview, LV_SYMBOL_IMAGE);    // Graph
-    tab_selc = lv_tabview_add_tab(tabview, LV_SYMBOL_LIST);     // Paste Select
+    tab_ctrl = lv_tabview_add_tab(tabview, LV_SYMBOL_HOME); // Controls
+    // lv_obj_set_user_data(tab_ctrl, (void *)"Controls");
+    tab_grph = lv_tabview_add_tab(tabview, LV_SYMBOL_IMAGE); // Graph
+    // lv_obj_set_user_data(tab_grph, (void *)"Graph");
+    tab_selc = lv_tabview_add_tab(tabview, LV_SYMBOL_LIST); // Paste Select
+    // lv_obj_set_user_data(tab_selc, (void *)"Solder Selection");
     tab_sett = lv_tabview_add_tab(tabview, LV_SYMBOL_SETTINGS); // Settings
-    tab_abut = lv_tabview_add_tab(tabview, LV_SYMBOL_WARNING);  // About
+    // lv_obj_set_user_data(tab_sett, (void *)"Settings");
+    tab_abut = lv_tabview_add_tab(tabview, LV_SYMBOL_WARNING); // About
+    // lv_obj_set_user_data(tab_abut, (void *)"Faults");
 
     // Global
     NoticeBoard _nb(lv_scr_act(), 8);
     nb = &_nb;
     pwr_noti = nb->addNotice(LV_SYMBOL_CHARGE, 0, LV_PALETTE_YELLOW);
-    hot_noti = nb->addNotice(LV_SYMBOL_WARNING, 0, LV_PALETTE_RED); // TODO: fire symbol
+    hot_noti = nb->addNotice(LV_SYMBOL_WARNING, 0, LV_PALETTE_RED);               // TODO: fire symbol
+    no_prof = nb->addNotice(LV_SYMBOL_IMAGE, notice_no_profile, LV_PALETTE_GREY); // TODO: paste symbol
 
     // Controls Tab
     ctrl_label_select = lv_label_create(tab_ctrl);
     lv_obj_set_style_text_font(ctrl_label_select, &lv_font_montserrat_16, 0);
-    lv_label_set_text(ctrl_label_select, "No Profile Selected");
     lv_obj_align(ctrl_label_select, LV_ALIGN_TOP_LEFT, 0, 0);
 
     ctrl_btn_start = Button(tab_ctrl);
@@ -247,8 +290,6 @@ int main(void) {
     grph_graph = &g;
     grph_graph->setSize(lv_pct(90), lv_pct(85));
     grph_graph->setPos(-20, -2);
-    grph_graph->setSubText("");
-    grph_graph->setTitle("No Profile");
 
     // Select Tab
     Graph::Graph pg(tab_selc, true);
@@ -292,6 +333,8 @@ int main(void) {
 
     pinMode(PIN_HEATER_RELAY, OUTPUT);
 
+    set_reflow_profile();
+
     while (true) {
         double time = time_et / 1000000.0;
         if (poll_et >= 100) {
@@ -318,6 +361,11 @@ int main(void) {
                 nb->pushNotice(hot_noti);
             } else {
                 nb->clearNotice(hot_noti);
+            }
+            if (!active_profile) {
+                nb->pushNotice(no_prof);
+            } else {
+                nb->clearNotice(no_prof);
             }
         }
         nb->update();

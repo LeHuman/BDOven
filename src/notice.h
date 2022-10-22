@@ -153,6 +153,8 @@ public:
         clearNotice(notices.back());
     }
     void clearNotice(Notice *notice) {
+        if (!board.contains(notice))
+            return;
         board.extract(notice);
         notice->setVisible(false);
         invalid = true;
