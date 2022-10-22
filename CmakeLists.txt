@@ -115,7 +115,7 @@ add_library(libraries STATIC ${L_ASM_BUILD_FILES} ${L_C_BUILD_FILES} ${L_CXX_BUI
 target_include_directories(libraries PUBLIC ${LIBRARY_PATH} ${LIBRARY_INCLUDE})
 target_link_libraries(libraries core)
 
-add_subdirectory(lvgl)
+add_subdirectory(libraries/lvgl)
 target_link_libraries(lvgl libraries)
 
 # Executable

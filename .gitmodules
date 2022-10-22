@@ -8,7 +8,7 @@
 	path = libraries/T4_PXP
 	url = https://github.com/vjmuzik/T4_PXP
 [submodule "lvgl"]
-	path = lvgl
+	path = libraries/lvgl
 	url = https://github.com/lvgl/lvgl
 [submodule "libraries/spline"]
 	path = libraries/spline
