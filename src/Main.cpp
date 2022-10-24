@@ -220,8 +220,9 @@ void reset() {
 }
 
 int main(void) {
+    // TODO: ensure safe state on reset
     pinMode(16, INPUT_PULLUP);
-    attachInterrupt(16, reset, FALLING);
+    attachInterrupt(16, reset, LOW);
     Display::init();
 
     // TODO: add tabview fade in/out title
