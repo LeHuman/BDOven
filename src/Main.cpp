@@ -215,7 +215,13 @@ static void ctrl_event_btn_abort(lv_event_t *e) {
 
 // TODO: look ahead with PID
 
+void reset() {
+    SCB_AIRCR = 0x05FA0004;
+}
+
 int main(void) {
+    pinMode(16, INPUT_PULLUP);
+    attachInterrupt(16, reset, FALLING);
     Display::init();
 
     // TODO: add tabview fade in/out title

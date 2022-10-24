@@ -1,4 +1,5 @@
 #include "lv_conf.h"
+#include "splash.h"
 #include <ILI9341_T4.h>
 #include <lvgl.h>
 
@@ -56,6 +57,21 @@ void my_touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data) {
     }
 }
 
+void playFrameSequence(const uint16_t frames[10][Width * Height], int length, uint32_t max_fps, u_int32_t hold_ms) {
+    static elapsedMicros em;
+    max_fps = 1000000 / max_fps;
+    while (length-- > 0) {
+        tft.update(*frames);
+        frames++;
+        while (em < max_fps) {
+        }
+        tft.waitUpdateAsyncComplete();
+        em = 0;
+    }
+    while (em < hold_ms * 1000) {
+    }
+}
+
 void init() {
     // Serial.begin(115200);
     tft.begin(SPI_SPEED, 6000000);
@@ -66,6 +82,9 @@ void init() {
     tft.setRefreshRate(fps);            // Set the refresh rate to around 120Hz
     tft.setVSyncSpacing(1);             // set framerate = refreshrate (we must draw the fast for this to works: ok in our case).
     tft.setTouchCalibration((int *)Calibration);
+
+    playFrameSequence(SplashScreen, 10, 8, 1000);
+
     lv_init();
 
     // // initialize lvgl drawing buffer
