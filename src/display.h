@@ -57,15 +57,36 @@ void my_touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data) {
     }
 }
 
-void playFrameSequence(const uint16_t frames[10][Width * Height], int length, uint32_t max_fps, u_int32_t hold_ms) {
+void playFrameSequence(const uint16_t frames[40][Width * Height / 4], int length, uint32_t max_fps, u_int32_t hold_ms) {
     static elapsedMicros em;
     max_fps = 1000000 / max_fps;
+    uint16_t *buf = (uint16_t *)lvgl_buf;
+    for (int y = 0; y < Height / 2; y++) { // TODO: better way to scale matrix up?
+        for (int x = 0; x < Width / 2; x++) {
+            uint16_t pxl = (*frames)[x + (y * Width / 2)];
+            buf[2 * x + (2 * y * Width)] = pxl;
+            buf[(2 * x + (2 * y * Width)) + 1] = pxl;
+            buf[(2 * x + (2 * y * Width)) + Width] = pxl;
+            buf[(2 * x + (2 * y * Width)) + Width + 1] = pxl;
+        }
+    }
+    frames++;
+    length--;
     while (length-- > 0) {
-        tft.update(*frames);
+        tft.update(buf);
+        for (int y = 0; y < Height / 2; y++) {
+            for (int x = 0; x < Width / 2; x++) {
+                uint16_t pxl = (*frames)[x + (y * Width / 2)];
+                buf[2 * x + (2 * y * Width)] = pxl;
+                buf[(2 * x + (2 * y * Width)) + 1] = pxl;
+                buf[(2 * x + (2 * y * Width)) + Width] = pxl;
+                buf[(2 * x + (2 * y * Width)) + Width + 1] = pxl;
+            }
+        }
         frames++;
+        tft.waitUpdateAsyncComplete();
         while (em < max_fps) {
         }
-        tft.waitUpdateAsyncComplete();
         em = 0;
     }
     while (em < hold_ms * 1000) {
@@ -83,7 +104,7 @@ void init() {
     tft.setVSyncSpacing(1);             // set framerate = refreshrate (we must draw the fast for this to works: ok in our case).
     tft.setTouchCalibration((int *)Calibration);
 
-    playFrameSequence(SplashScreen, 10, 8, 1000);
+    playFrameSequence(SplashScreen, 40, 40, 750);
 
     lv_init();
 
