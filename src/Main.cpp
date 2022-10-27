@@ -225,7 +225,7 @@ void splashFinish(lv_event_t *event) {
 }
 
 void splashPlay() {
-    lv_obj_t *img = lv_gif_create(lv_scr_act());
+    lv_obj_t *img = lv_gif_create(lv_layer_top());
     lv_gif_set_src(img, &Splash);
     lv_obj_align(img, LV_ALIGN_CENTER, 0, 0);
     lv_obj_add_event_cb(img, splashFinish, LV_EVENT_READY, img);
