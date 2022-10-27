@@ -83,7 +83,7 @@ void notice_no_profile(Notice *noti) {
 }
 
 void enableHeater(bool enable) {
-    enable *= baking;
+    enable &= baking;
     digitalWriteFast(PIN_HEATER_RELAY, enable);
     if (enable)
         nb->pushNotice(pwr_noti, true);
@@ -254,7 +254,7 @@ int main(void) {
     lv_obj_t *tab_btns = lv_tabview_get_tab_btns(tabview);
     lv_obj_set_style_bg_color(tab_btns, lv_palette_darken(LV_PALETTE_GREY, 3), 0);
     lv_obj_set_style_text_color(tab_btns, lv_palette_lighten(LV_PALETTE_GREY, 5), 0);
-    lv_obj_set_style_border_side(tab_btns, LV_BORDER_SIDE_LEFT, LV_PART_ITEMS | LV_STATE_CHECKED);
+    lv_obj_set_style_border_side(tab_btns, LV_BORDER_SIDE_LEFT, (lv_style_selector_t)LV_PART_ITEMS | (lv_style_selector_t)LV_STATE_CHECKED);
 
     tab_ctrl = lv_tabview_add_tab(tabview, LV_SYMBOL_HOME); // Controls
     // lv_obj_set_user_data(tab_ctrl, (void *)"Controls");

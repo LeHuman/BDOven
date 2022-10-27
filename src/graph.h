@@ -26,7 +26,7 @@ public:
     void updateRange();
 
     Graph(lv_obj_t *parent, bool) : min_graph(true), chart(lv_chart_create(parent)) { min_init(); };
-    Graph(lv_obj_t *parent) : chart(lv_chart_create(parent)), title(lv_label_create(parent)), sub_text(lv_label_create(parent)) { init(); };
+    Graph(lv_obj_t *parent) : chart(lv_chart_create(parent)), sub_text(lv_label_create(parent)), title(lv_label_create(parent)) { init(); };
 
     void zoom(uint16_t zoom);
     void setVisible(bool visible);
