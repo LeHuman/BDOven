@@ -1,5 +1,4 @@
 #include "lv_conf.h"
-#include "splash.h"
 #include <ILI9341_T4.h>
 #include <lvgl.h>
 
@@ -55,74 +54,6 @@ void my_touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data) {
         data->point.x = touchX;
         data->point.y = touchY;
     }
-}
-
-// bool tft_output(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t *bitmap) {
-//     tft.update(bitmap);
-//     return true;
-// }
-
-// void load_jpg(const uint8_t *fn, void *work, uint16_t sz_work) {
-//     JDEC jd;
-//     JRESULT rc;
-//     uint8_t scale;
-
-//     /* Prepare to decompress the file */
-//     rc = jd_prepare(&jd, tjd_input, work, sz_work, 0);
-//     if (rc == JDR_OK) {
-
-//         /* Determine scale factor */
-//         for (scale = 0; scale < 3; scale++) {
-//             if ((jd.width >> scale) <= DISP_XS && (jd.height >> scale) <= DISP_YS)
-//                 break;
-//         }
-
-//         /* Display size information at bottom of screen */
-//         disp_locate(0, TS_HEIGHT - 1);
-//         xfprintf(disp_putc, PSTR("%ux%u 1/%u"), jd.width, jd.height, 1 << scale);
-
-//         /* Start to decompress the JPEG file */
-//         rc = jd_decomp(&jd, tjd_output, scale); /* Start to decompress */
-
-//     } else {
-
-//         /* Display error code */
-//         disp_locate(0, 0);
-//         xfprintf(disp_putc, PSTR("Error: %d"), rc);
-//     }
-//     uart_getc();
-// }
-
-// void playFrameSequence(const uint8_t **frames, int length, uint32_t max_fps, u_int32_t hold_ms) {
-//     static elapsedMicros em;
-//     max_fps = 1000000 / max_fps;
-//     uint16_t *buf = (uint16_t *)lvgl_buf;
-
-//     TJpgDec.setCallback(tft_output);
-//     TJpgDec.setSwapBytes(true);
-
-//     while (length-- > 0) {
-//         // tft.update(buf);
-//         TJpgDec.drawJpg(0, 0, *frames, 12000);
-//         frames++;
-//         tft.waitUpdateAsyncComplete();
-//         while (em < max_fps) {
-//         }
-//         em = 0;
-//     }
-//     while (em < hold_ms * 1000) {
-//     }
-// }
-
-void splashFinish(lv_event_t *event) {
-    lv_obj_del((lv_obj_t *)lv_event_get_user_data(event));
-}
-
-void splashPlay() {
-    lv_obj_t *img = lv_gif_create(lv_scr_act());
-    lv_gif_set_src(img, &Splash);
-    lv_obj_align(img, LV_ALIGN_CENTER, 0, 0);
-    lv_obj_add_event_cb(img, splashFinish, LV_EVENT_READY, img);
 }
 
 void init() {
