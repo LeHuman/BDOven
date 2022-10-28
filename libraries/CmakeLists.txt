@@ -27,6 +27,7 @@ ADD_LIB(SPI)
 ADD_LIB(spline/src)
 ADD_LIB(T4_PXP/src)
 ADD_LIB(Time)
+ADD_LIB(gif/src)
 
 target_include_directories(libraries PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 target_link_libraries(libraries core)

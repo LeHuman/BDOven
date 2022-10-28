@@ -1,6 +1,7 @@
 #include "Arduino.h"
 #include "pid.h"
 #include "spline.h"
+// #include <AnimatedGIF.h>
 #include <atomic>
 #include <vector>
 
@@ -10,7 +11,7 @@
 #include "graph.h"
 #include "notice.h"
 #include "reflow.h"
-#include "splash.h"
+// #include "splash.h"
 #include "toaster.h"
 
 #define PIN_HEATER_RELAY 15
@@ -218,26 +219,15 @@ static void ctrl_event_btn_abort(lv_event_t *e) {
 
 void reset() {
     SCB_AIRCR = 0x05FA0004;
-}
-
-void splashFinish(lv_event_t *event) {
-    lv_obj_del((lv_obj_t *)lv_event_get_user_data(event));
-}
-
-void splashPlay() {
-    lv_obj_t *img = lv_gif_create(lv_layer_top());
-    lv_gif_set_src(img, &Splash);
-    lv_obj_align(img, LV_ALIGN_CENTER, 0, 0);
-    lv_obj_add_event_cb(img, splashFinish, LV_EVENT_READY, img);
+    // splashPlay(24, 1000);
 }
 
 int main(void) {
     // TODO: ensure safe state on reset
     pinMode(16, INPUT_PULLUP);
     attachInterrupt(16, reset, LOW);
+    Serial.begin(9600);
     Display::init();
-
-    splashPlay();
 
     // TODO: add tabview fade in/out title
     tabview = lv_tabview_create(lv_scr_act(), LV_DIR_RIGHT, lv_pct(10));
