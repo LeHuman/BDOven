@@ -16,3 +16,6 @@
 [submodule "libraries/PID-Library"]
 	path = libraries/PID-Library
 	url = https://github.com/Majid-Derhambakhsh/PID-Library/
+[submodule "libraries/gif"]
+	path = libraries/gif
+	url = https://github.com/bitbank2/AnimatedGIF
