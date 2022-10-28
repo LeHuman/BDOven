@@ -1,7 +1,6 @@
 #include "Arduino.h"
 #include "pid.h"
 #include "spline.h"
-// #include <AnimatedGIF.h>
 #include <atomic>
 #include <vector>
 
@@ -11,7 +10,6 @@
 #include "graph.h"
 #include "notice.h"
 #include "reflow.h"
-// #include "splash.h"
 #include "toaster.h"
 
 #define PIN_HEATER_RELAY 15

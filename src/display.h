@@ -84,8 +84,6 @@ void splashPlay(uint32_t max_fps, u_int32_t hold_ms) {
             max_fps = 1000000 / max_fps;
 
             while (gif.playFrame(false, NULL)) {
-                uint32_t ems = em;
-                Serial.printf("%lu %lu\n", ems, max_fps);
                 tft.update((const uint16_t *)lvgl_buf);
                 while (em < max_fps) {
                 }
@@ -106,11 +104,11 @@ void init() {
     tft.setFramebuffer(internal_fb);    // set the internal framebuffer (enables double buffering)
     tft.setDiffBuffers(&diff1, &diff2); // set the 2 diff buffers => activate differential updates.
     tft.setDiffGap(4);                  // use a small gap for the diff buffers (useful because cells are small...)
-    tft.setRefreshRate(24);             // Set the refresh rate to around 120Hz
+    tft.setRefreshRate(30);             // Set the refresh rate to around 120Hz
     tft.setVSyncSpacing(1);             // set framerate = refreshrate (we must draw the fast for this to works: ok in our case).
     tft.setTouchCalibration((int *)Calibration);
 
-    splashPlay(24, 1000);
+    splashPlay(30, 1000);
     tft.setRefreshRate(fps);
 
     lv_init();
