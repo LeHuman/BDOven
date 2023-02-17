@@ -13,6 +13,7 @@
 #include "toaster.h"
 
 #define PIN_HEATER_RELAY 15
+#define PIN_BACKLIGHT_CTRL 6
 #define TEMP_HOT 37
 
 char buf[BUFSIZ];
@@ -37,6 +38,10 @@ lv_obj_t *selc_list;
 lv_obj_t *selc_active_btn = nullptr;
 
 lv_obj_t *tab_sett;
+Button sett_btn_bright_up;
+lv_obj_t *sett_label_bright;
+Button sett_btn_bright_down;
+
 lv_obj_t *tab_abut;
 
 const Reflow::ReflowProfile *select_profile = nullptr;
@@ -213,6 +218,18 @@ static void ctrl_event_btn_abort(lv_event_t *e) {
     }
 }
 
+static void sett_event_btn_bright(lv_event_t *e) {
+    static int brightness = 100;
+    lv_event_code_t code = lv_event_get_code(e);
+    int bright_up = &sett_btn_bright_up == (Button *)lv_event_get_user_data(e);
+    bright_up = bright_up + (!bright_up * -1);
+    if (code == LV_EVENT_PRESSING) {
+        brightness = clamp(brightness + bright_up, 0, 100);
+        analogWrite(PIN_BACKLIGHT_CTRL, cmap(brightness, 0, 100, 1, 4096)); // TODO: Analog resolution
+        lv_label_set_text_fmt(sett_label_bright, "%i", brightness);
+    }
+}
+
 // TODO: look ahead with PID
 
 void reset() {
@@ -223,6 +240,8 @@ void reset() {
 int main(void) {
     // TODO: ensure safe state on reset
     pinMode(16, INPUT_PULLUP);
+    analogWriteResolution(12);
+    analogReadResolution(12);
     attachInterrupt(16, reset, LOW);
     Serial.begin(9600);
     Display::init();
@@ -329,11 +348,24 @@ int main(void) {
         lv_obj_t *btn = lv_btn_create(selc_list);
         lv_obj_set_width(btn, lv_pct(100));
         lv_obj_add_event_cb(btn, selc_event_list_select, LV_EVENT_CLICKED, (void *)&profile);
-
         lv_obj_t *lab = lv_label_create(btn);
         Reflow::title(&profile, buf, BUFSIZ);
         lv_label_set_text(lab, buf);
     }
+
+    // Settings Tab
+    sett_btn_bright_up = Button(tab_sett);
+    sett_btn_bright_up.setLabel(LV_SYMBOL_UP);
+    sett_btn_bright_up.setAlign(LV_ALIGN_TOP_MID);
+    sett_btn_bright_up.setOnPressing(sett_event_btn_bright, &sett_btn_bright_up);
+    sett_btn_bright_down = Button(tab_sett);
+    sett_btn_bright_down.setLabel(LV_SYMBOL_DOWN);
+    sett_btn_bright_down.setAlign(LV_ALIGN_BOTTOM_MID);
+    sett_btn_bright_down.setOnPressing(sett_event_btn_bright, &sett_btn_bright_down);
+    sett_label_bright = lv_label_create(tab_sett);
+    lv_obj_set_style_text_font(sett_label_bright, &lv_font_montserrat_16, 0);
+    lv_label_set_text(sett_label_bright, "100");
+    lv_obj_align(sett_label_bright, LV_ALIGN_CENTER, 0, 0);
 
     TPID.Init(&temp, &PIDOut, &tempTarget, Kp, Ki, Kd, _PID_P_ON_E, _PID_CD_DIRECT);
     TPID.SetMode(_PID_MODE_AUTOMATIC);

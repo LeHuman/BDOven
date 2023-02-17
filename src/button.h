@@ -32,6 +32,9 @@ public:
     void setOnClick(lv_event_cb_t event_cb, void *user_data = NULL) {
         lv_obj_add_event_cb(btn, event_cb, LV_EVENT_CLICKED, user_data);
     }
+    void setOnPressing(lv_event_cb_t event_cb, void *user_data = NULL) {
+        lv_obj_add_event_cb(btn, event_cb, LV_EVENT_PRESSING, user_data);
+    }
     void setOnDown(lv_event_cb_t event_cb, void *user_data = NULL) {
         lv_obj_add_event_cb(btn, event_cb, LV_EVENT_PRESSED, user_data);
         lv_obj_add_event_cb(btn, event_cb, LV_EVENT_RELEASED, user_data);

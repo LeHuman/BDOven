@@ -1,4 +1,5 @@
 #include "lv_conf.h"
+#include "util.h"
 #include <AnimatedGIF.h>
 #include <ILI9341_T4.h>
 #include <lvgl.h>
@@ -7,15 +8,15 @@
 
 #pragma once
 
-#define PIN_SCK 13        // mandatory
-#define PIN_MISO 12       // mandatory
-#define PIN_MOSI 11       // mandatory
-#define PIN_DC 10         // mandatory, can be any pin but using pin 10 (or 36 or 37 on T4.1) provides greater performance
-#define PIN_CS 9          // mandatory when using the touchscreen on the same SPI bus, can be any pin.
-#define PIN_RESET 14      // optional (but recommended), can be any pin.
-#define PIN_BACKLIGHT 255 // optional. Set this only if the screen LED pin is connected directly to the Teensy
-#define PIN_TOUCH_CS 8    // mandatory, can be any pin
-#define PIN_TOUCH_IRQ 7   // (optional) can be any digital pin with interrupt capabilities
+#define PIN_SCK 13      // mandatory
+#define PIN_MISO 12     // mandatory
+#define PIN_MOSI 11     // mandatory
+#define PIN_DC 10       // mandatory, can be any pin but using pin 10 (or 36 or 37 on T4.1) provides greater performance
+#define PIN_CS 9        // mandatory when using the touchscreen on the same SPI bus, can be any pin.
+#define PIN_RESET 14    // optional (but recommended), can be any pin.
+#define PIN_BACKLIGHT 6 // optional. Set this only if the screen LED pin is connected directly to the Teensy
+#define PIN_TOUCH_CS 8  // mandatory, can be any pin
+#define PIN_TOUCH_IRQ 7 // (optional) can be any digital pin with interrupt capabilities
 
 // #define SPI_SPEED 80000000
 #define SPI_SPEED 75000000
@@ -98,6 +99,15 @@ void splashPlay(uint32_t max_fps, u_int32_t hold_ms) {
     }
 }
 
+void setBrightness(int percent, bool dv = false) {
+    static int last = 0;
+    if (dv)
+        percent += last;
+    int prev = analogWriteResolution(12);
+    analogWrite(PIN_BACKLIGHT, (last = cmap(percent, 0, 100, 0, 4096)));
+    analogWriteResolution(prev);
+}
+
 void init() {
     tft.begin(SPI_SPEED, 6000000);
     tft.setRotation(1);                 // landscape mode 320x240
@@ -107,6 +117,7 @@ void init() {
     tft.setRefreshRate(30);             // Set the refresh rate to around 120Hz
     tft.setVSyncSpacing(1);             // set framerate = refreshrate (we must draw the fast for this to works: ok in our case).
     tft.setTouchCalibration((int *)Calibration);
+    setBrightness(100);
 
     splashPlay(30, 1000);
     tft.setRefreshRate(fps);

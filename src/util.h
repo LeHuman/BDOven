@@ -13,3 +13,4 @@ constexpr auto cmap(T val, A in_min, B in_max, C out_min, D out_max) {
 
 // FIXME: unable to compile without --specs=nano.specs?
 char *ftoa(float num, char *buf, int sz);
+int log2_32(uint32_t value);

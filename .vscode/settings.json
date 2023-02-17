@@ -1,5 +1,5 @@
 {
-    "TEENSY_PORT": "COM13",
+    "TEENSY_PORT": "COM3",
     "BAUDRATE": "115200",
     "CORE": "teensy4",
     "CORE_MODEL": "40",
